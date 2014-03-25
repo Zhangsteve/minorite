@@ -1,0 +1,35 @@
+name = minoritegroupe HTML5 Theme
+description = HTML5 theme for minoritegroupe.
+core = 7.x
+engine = phptemplate
+screenshot = screenshot.png
+version = 7.x-1.0
+project = disney
+
+stylesheets[all][] = css/reset.css
+stylesheets[all][] = css/style.css
+
+; Hard dependencies of script.js
+scripts[] = js/plugins/modernizr.custom.min.js
+scripts[] = js/plugins/jquery-migrate.min.js
+scripts[] = js/plugins/syze.min.js
+scripts[] = js/plugins/jquery.icheck.min.js
+scripts[] = js/plugins/jquery.fancybox-1.3.4.pack.js
+
+; Added on every pages.
+scripts[] = js/helper.js
+scripts[] = js/script.js
+
+regions[top] = 'Toolbar Top'
+regions[header] = 'Header'
+regions[navigation] = 'Navigation'
+regions[help] = 'Help'
+regions[highlighted] = 'Highlighted'
+regions[content] = 'Content'
+regions[left] = 'Left Sidebar'
+regions[right] = 'Right Sidebar'
+regions[footer] = 'Footer'
+regions[bottom] = 'Toolbar Bottom'
+
+; Add Panel layouts
+plugins[panels][layouts] = layouts

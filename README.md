@@ -1,0 +1,4 @@
+minorite
+========
+
+minorité groupe
