@@ -1,0 +1,7 @@
+name = System
+description = Handles general site configuration, configuration, and dependencies.
+core = 7.x
+package = minorite groupe
+version = 7.x-1.0
+project = mini_system
+files[] = lib/Minorite/System/Block/CacheBlock.php

@@ -1,0 +1,61 @@
+<?php
+
+/**
+ * @file
+ * Installation functions for System module.
+ */
+
+define('LOREM_IPSUM', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean neque lectus, ullamcorper vitae purus a, vulputate varius sapien. Sed a justo lacus. Morbi rhoncus, metus nec tincidunt dictum, metus nisl egestas eros, vitae interdum dolor mauris ut risus. Vivamus pulvinar dui eros, sit amet fermentum augue molestie eu. Vivamus dictum ipsum vel interdum facilisis. Nulla molestie id lectus non scelerisque. Ut ut ipsum nec ante congue hendrerit ac non urna. Sed accumsan turpis ut nisl ornare, a ullamcorper diam imperdiet. Cras lobortis libero et augue ultrices feugiat. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.');
+
+/**
+ * Implements hook_install().
+ */
+function mini_system_install() {
+  db_update('system')
+    ->fields(array('weight' => -999))
+    ->condition('type', 'module')
+    ->condition('name', 'mini_system')
+    ->execute();
+
+  $field = field_info_field('body');
+  if (empty($field)) {
+    // Creates the body field.
+    $field = array(
+      'field_name' => 'body',
+      'type' => 'text_with_summary',
+      'entity_types' => array(),
+    );
+    field_create_field($field);
+  }
+}
+
+/**
+ * Re-configure field body.
+ */
+function mini_system_update_7112() {
+  $field = field_info_field('body');
+  $field['entity_types'] = array();
+  $prior_field = field_read_field('body');
+
+  $has_data = field_has_data($field);
+  // The serialized 'data' column contains everything from $field that does not
+  // have its own column and is not automatically populated when the field is
+  // read.
+  $data = $field;
+  unset($data['columns'], $data['field_name'], $data['type'], $data['locked'], $data['module'], $data['cardinality'], $data['active'], $data['deleted']);
+  // Additionally, do not save the 'bundles' property populated by
+  // field_info_field().
+  unset($data['bundles']);
+
+  $field['data'] = $data;
+
+  // Store the field and create the id.
+  $primary_key = array('id');
+  drupal_write_record('field_config', $field, $primary_key);
+
+  // Clear caches
+  field_cache_clear(TRUE);
+
+  // Invoke external hooks after the cache is cleared for API consistency.
+  module_invoke_all('field_update_field', $field, $prior_field, $has_data);
+}
