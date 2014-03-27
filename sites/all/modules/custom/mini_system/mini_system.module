@@ -22,12 +22,12 @@ define('DRUPAL_CACHE_PER_MANAGEMENT', 0x0020);
  *
  * Register name spaces of bootstrap modules
  */
-function mini_system_boot() {
+/*function mini_system_boot() {
   foreach (module_list(FALSE, TRUE) as $module) {
     $filename = drupal_get_filename('module', $module);
     mini_system_register($module, dirname($filename));
   }
-}
+}*/
 
 /**
  * Implements hook_init().
@@ -232,26 +232,6 @@ function mini_system_menu_alter(&$items) {
   $items['admin/people/permissions']['access arguments'] = array('super administrator');
 }
 
-/**
- * Implements hook_custom_theme().
- *
- * Enables HTML 4 theme if browser is not HTML 5 compatible.
- */
-function mini_system_custom_theme() {
-  //use mobile_switch module to detect the kind of user's device.
-  //@see mobile_switch.module
-  $browser = mini_system_browser_capability();
-  return $browser->isHtml5() ? 'disney' : 'disney_html4';
-}
-
-/**
- * Returns user browser's capabilities.
- *
- * @return Disney\System\Browser\CapabilityInterface
- */
-function mini_system_browser_capability() {
-  return drupal_container()->get('browser.capability');
-}
 
 /**
  * Implements hook_theme().

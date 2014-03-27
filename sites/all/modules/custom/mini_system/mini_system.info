@@ -5,3 +5,4 @@ package = minorite groupe
 version = 7.x-1.0
 project = mini_system
 files[] = lib/Minorite/System/Block/CacheBlock.php
+dependencies[] = classloader

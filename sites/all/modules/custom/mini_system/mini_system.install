@@ -5,8 +5,6 @@
  * Installation functions for System module.
  */
 
-define('LOREM_IPSUM', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean neque lectus, ullamcorper vitae purus a, vulputate varius sapien. Sed a justo lacus. Morbi rhoncus, metus nec tincidunt dictum, metus nisl egestas eros, vitae interdum dolor mauris ut risus. Vivamus pulvinar dui eros, sit amet fermentum augue molestie eu. Vivamus dictum ipsum vel interdum facilisis. Nulla molestie id lectus non scelerisque. Ut ut ipsum nec ante congue hendrerit ac non urna. Sed accumsan turpis ut nisl ornare, a ullamcorper diam imperdiet. Cras lobortis libero et augue ultrices feugiat. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.');
-
 /**
  * Implements hook_install().
  */
@@ -28,7 +26,9 @@ function mini_system_install() {
     field_create_field($field);
   }
 }
-
+function mini_system_update_7001() {
+  module_enable('classloader');
+}
 /**
  * Re-configure field body.
  */
