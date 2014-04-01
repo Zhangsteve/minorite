@@ -22,12 +22,14 @@ define('DRUPAL_CACHE_PER_MANAGEMENT', 0x0020);
  *
  * Register name spaces of bootstrap modules
  */
-/*function mini_system_boot() {
+function mini_system_boot() {
   foreach (module_list(FALSE, TRUE) as $module) {
     $filename = drupal_get_filename('module', $module);
     mini_system_register($module, dirname($filename));
   }
-}*/
+
+  $filename = drupal_get_filename('module', 'mini_system');
+}
 
 /**
  * Implements hook_init().
@@ -60,23 +62,40 @@ function mini_system_library() {
   $path = drupal_get_path('module', 'mini_system');
   $libraries = array();
 
-  // Tooltip plugin.
-  $libraries['tooltip'] = array(
-    'title' => 'Tooltip',
-    'version' => '1.0',
+  // jQuery bxSlider plugin.
+  $libraries['jquery.bxslider'] = array(
+    'title' => 'jQuery bxSlider',
+    'website' => 'http://bxslider.com/',
+    'version' => '4.1',
     'js' => array(
-      $path . '/js/tooltip.js' => array(),
+      $path . '/misc/jquery.bxslider.min.js' => array(),
     ),
   );
-
+  $libraries['tooltip'] = array(
+      'title' => 'Tooltip',
+      'version' => '1.0',
+      'js' => array(
+          $path . '/js/tooltip.js' => array(),
+      ),
+  );
   // jQuery placeholder plugin.
   $libraries['jquery.placeholder'] = array(
     'title' => 'jQuery Placeholder',
     'website' => 'http://mathiasbynens.be/demo/placeholder',
     'version' => '1.8.7',
     'js' => array(
-      $path . '/js/jquery.placeholder.js' => array(),
+      $path . '/misc/jquery.placeholder.js' => array(),
     ),
+  );
+
+  // jQuery Touch Punch plugin.
+  $libraries['jquery.touchpunch'] = array(
+      'title' => 'jQuery Touch Punch',
+      'website' => 'http://touchpunch.furf.com/',
+      'version' => '0.2.2',
+      'js' => array(
+          $path . '/misc/jquery.ui.touch-punch.min.js' => array(),
+      ),
   );
 
   return $libraries;
