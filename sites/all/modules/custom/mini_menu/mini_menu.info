@@ -1,0 +1,10 @@
+name = Menu
+description = Menu system and settings.
+core = 7.x
+package = minorite groupe
+version = 7.x-1.0
+project = mini_menu
+dependencies[] = ctools
+dependencies[] = features
+dependencies[] = path
+dependencies[] = menu

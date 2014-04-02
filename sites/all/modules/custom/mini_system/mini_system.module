@@ -199,6 +199,19 @@ function mini_system_form_alter(&$form, &$form_state, $form_id) {
 function mini_system_block_info() {
 
 }
+/**
+ * Implements hook_block_info_alter().
+ *
+ * Activates the User menu block.
+ */
+function mini_system_block_info_alter(&$blocks, $theme, $code_blocks) {
+  if ($theme == 'minorite') {
+    // Enables primary navigation.
+    $blocks['system']['user-menu']['status'] = 1;
+    $blocks['system']['user-menu']['region'] = 'top';
+    $blocks['system']['user-menu']['weight'] = 0;
+  }
+}
 
 /**
  * Implements hook_block_configure().

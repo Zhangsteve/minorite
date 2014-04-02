@@ -1,0 +1,90 @@
+<?php
+/**
+ * Implements hook_block_info_alter().
+ */
+function mini_search_block_info_alter(&$blocks, $theme, $code_blocks) {
+  // TODO: Removes core search block.
+//   unset($blocks['search']['form']);
+  if ($theme == 'minorite' || $theme == 'minorite_html4') {
+    // Enables search block on header.
+    $blocks['mini_search']['header']['status'] = 1;
+    $blocks['mini_search']['header']['region'] = 'header';
+    // Enables search block on bottom.
+    $blocks['mini_search']['bottom']['status'] = 1;
+    $blocks['mini_search']['bottom']['region'] = 'bottom';
+  }
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function mini_search_block_info() {
+  $blocks = array();
+
+  $blocks['header'] = array(
+      'info' => t('Header search'),
+      'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+
+  $blocks['bottom'] = array(
+      'info' => t('Bottom search'),
+      'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function mini_search_block_view($delta = '') {
+  $block['content'] = 'dummy content';
+  $block['subject'] = t('Search');
+  return $block;
+}
+
+
+/**
+ * hook_search_api_query_alter
+ * So we change the conjunction of the type search field by on OR
+ * We don't have this option by default on the admin
+ */
+function mini_search_search_api_query_alter(SearchApiQueryInterface $query) {
+  // First check in there is some filter
+  $check_filter = $query->getFilter()->getFilters();
+  if (isset($check_filter[0])) {
+
+    // Then recheck is there is sub filter
+    $tmp = &$query->getFilter()->getFilters();
+    $filters = &$tmp[0]->getFilters();
+    if (isset($filters)) {
+
+      // If there is we see if there is SearchApiQueryFilter object
+      // Because it's the "Type" filter and we put them in an array
+      $change_filter = array();
+      foreach($filters as $pos => $filter) {
+        //Because in drupal the creation time of a node in database is saved on format 'm/d/Y -H:i',so we should add 24 hours to include all the node for a day.
+        if (is_array($filter) && $filter[2] == '<=') {
+          $filters[$pos][$pos] = strtotime('+23 hours', $filters[$pos][$pos]);
+        }
+        if (!is_array($filter)) {
+          $change_filter[$pos] = $filter;
+        }
+      }
+      // If there is only 1, then we don't need to change anything because the AND condition is fine
+      if (count($change_filter) > 1) {
+
+        // But if there is more than one, we need to create a sub filter with a OR condition
+        // Only for them and we need to delete them from the original filter (unset)
+        $new_filter = new SearchApiQueryFilter('OR');
+        foreach($change_filter as $pos => $elem) {
+          $new_filter->filter($elem);
+          unset($filters[$pos]);
+        }
+        // Add the new filter to the main one
+        $tmp2 = $query->getFilter()->getFilters();
+        $tmp2[0]->filter($new_filter);
+      }
+    }
+  }
+}
