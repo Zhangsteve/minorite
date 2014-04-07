@@ -6,7 +6,7 @@
  * @author Sylvain Lecoy <sylvain.lecoy@gmail.com>
  */
 
-namespace Minorite\System;
+namespace Mini\System;
 
 /**
  * Retrieves entities matching a given set of conditions.

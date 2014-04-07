@@ -1,4 +1,74 @@
 <?php
+use Mini\System\NodeFieldQuery;
+/**
+ * Returns Disney primary menus.
+ */
+function mini_menu_primary() {
+  $menu = array();
+  // Hard coded for performances and ordering purpose. This is the primary
+  // navigation links and is not intended to change that much.
+  $menu['voyage'] = 'node';
+  $menu['life'] = 'node';
+  $menu['headlines'] = 'node';
+  $menu['game'] = 'node';
+
+  return $menu;
+}
+
+/**
+ * Implements hook_menu().
+ *
+ * Integrates node call-back attributed to workbench sections with menu system.
+ *
+ * Hijack section/%node callback to allow workbench to belong to a virtual
+ * menu and having edit tabs at the same time.
+ */
+function mini_menu_menu() {
+  $items = array();
+
+  require_once 'mini_menu.features.menu_custom.inc';
+  $menus = mini_menu_menu_default_menu_custom();
+
+  foreach (array_keys(mini_menu_primary()) as $menu) {
+    $items[$menu] = array(
+        'title' => $menus[$menu]['menu_name'],
+        'access callback' => TRUE,
+        'menu_name' => $menu,
+        'type' => MENU_CALLBACK,
+    );
+  }
+  return $items;
+}
+/**
+ * Implements hook_node_view().
+ *
+ * Given a node displayed in 'full' mode, check if it belongs to a workbench
+ * section, and re-set the menu active item to activate accordingly the menu
+ * and bread-crumbs.
+ */
+function mini_menu_node_view($node, $view_mode, $langcode) {
+  // Only select nodes which are being viewed as full page and is not a complex
+  // page since by definition a complex page is also a menu item so the routing
+  // works naturally with the menu API without the need of defining the active item.
+  if ($view_mode == 'full') {
+    // When a node view mode is full, unset the title to avoid displaying it two times.
+    drupal_set_title('');
+    mini_menu_set_breadcrumb($node);
+  }
+}
+
+
+/**
+ * Sets the breadcrumb based on the workbench section of the node.
+ *
+ * TODO: factorize the function and clean-up a bit. Also check if cache_bootstrap needs to be set or not.
+ */
+function mini_menu_set_breadcrumb($node) {
+  // Save the current path.
+  $current_path = current_path();
+  // Reset to the last item to keep the node id at the right place.
+  menu_set_active_item($current_path);
+}
 /**
  * Implements hook_block_info_alter().
  *
@@ -77,20 +147,67 @@ function mini_menu_block_view($delta = '') {
 }
 /**
  * Returns the primary menu block.
+ *
+ * Get the level-2 navigation and displays it per menus.
  */
-function mini_menu_block_primary(){
-  $elements = array();
+function mini_menu_block_primary($elements) {
+  // Render the home as a menu link itself.
   $elements['menu']['#theme_wrappers'] = array('menu_tree__primary');
-  $menu = menu_main_menu();
-  // Sets the menu title to redirect the first child found in the sub-menu.
-  foreach ($menu as $menu => $item){
-    $elements['menu'][$menu]['#title'] = l(t($item['title']), $item['href']);
+  $elements['menu']['home'] = array(
+    '#theme' => 'menu_link__home',
+    '#title' => t('Home'),
+    '#href' => '<front>',
+  );
+
+  $names = menu_get_menus(FALSE);
+  foreach (mini_menu_primary() as $menu => $menu_mode) {
+    // Depending on the menu mode, either return a list of articles of the menu
+    // section, either return a block of admin contributed content.
+    switch ($menu_mode) {
+      case 'node':
+        // Configures the query to return entities of the section belonging
+        // to the menu (that is, workbench sub-sections).
+        $query = new NodeFieldQuery();
+        $query->propertyOrderBy('created', 'DESC')
+              ->entityCondition('bundle', array('article'))
+              ->addSectionType($menu)
+              ->range(0, 3);
+
+        $entities = $query->execute();
+
+        if (empty($entities)) {
+          $elements['menu'][$menu]['#nodes']['default_message'] = array(
+            '#markup' => '<p>' . t('No section content has been created yet.') . '</p>',
+            '#prefix' => '<li id="first-time">',
+            '#suffix' => '</li>',
+          );
+        }
+        else {
+          $nodes = node_load_multiple(array_keys($entities['node']));
+          $elements['menu'][$menu]['#nodes'] = node_view_multiple($nodes, 'menu');
+        }
+        break;
+
+      case 'block':
+        break;
+    }
+    $elements['menu'][$menu]['#links'] = menu_navigation_links($menu);
+
+    // Sets the menu title to redirect the first child found in the sub-menu.
+    if (empty($elements['menu'][$menu]['#links'])) {
+      $elements['menu'][$menu]['#title'] = l(t($names[$menu]), $menu);
+    }
+    else {
+      $link = current($elements['menu'][$menu]['#links']);
+      $elements['menu'][$menu]['#title'] = l(t($names[$menu]), $link['href']);
+    }
     $elements['menu'][$menu]['#attributes'] = array('class' => 'nav meganav');
     // Renders links before injecting them as children in the theme header.
     $elements['menu'][$menu]['#theme_wrappers'] = array('links__navigation', 'menu_header');
   }
   return $elements;
 }
+
 /**
  * Return secondary menu items
  */
@@ -122,6 +239,7 @@ function mini_menu_theme($existing, $type, $theme, $path) {
       ),
   );
 }
+
 
 /**
  * Returns HTML for a wrapper for a footer menu.

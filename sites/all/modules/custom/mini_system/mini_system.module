@@ -140,7 +140,7 @@ function mini_system_register($name, $base, $path = '/lib') {
     $namespaces = array();
     foreach (explode('_', $name) as $component) {
       // Camel\Case the name space.
-      $namespaces[] = ucfirst($component);
+      $namespaces[] = ucfirst($component);;
     }
     $namespace = implode('\\', $namespaces);
     $loader->registerNamespace($namespace, DRUPAL_ROOT . '/' . $base . $path);

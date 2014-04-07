@@ -48,20 +48,20 @@ function minorite_preprocess_html(&$variables) {
     $variables['theme_hook_suggestions'][] = 'html__node__newsletter';
   }
 
-  // TODO : à faire ailleurs pour éviter que le test se fasse sur chaque page
-  if (in_array('html__backup', $variables['theme_hook_suggestions'])) {
-    $variables['content'] = minorite_backup_page();
-  }
+//   // TODO : à faire ailleurs pour éviter que le test se fasse sur chaque page
+//   if (in_array('html__backup', $variables['theme_hook_suggestions'])) {
+//     $variables['content'] = minorite_backup_page();
+//   }
 
 }
 
-/**
- * Preprocess variables for the maintenance-page.tpl.php
- */
-function minorite_preprocess_maintenance_page(&$variables) {
-  $variables['content'] = minorite_backup_page();
-  $variables['theme_hook_suggestions'][] = 'html__backup';
-}
+// /**
+//  * Preprocess variables for the maintenance-page.tpl.php
+//  */
+// function minorite_preprocess_maintenance_page(&$variables) {
+//   $variables['content'] = minorite_backup_page();
+//   $variables['theme_hook_suggestions'][] = 'html__backup';
+// }
 
 /**
  * Preprocess variables for region.tpl.php
