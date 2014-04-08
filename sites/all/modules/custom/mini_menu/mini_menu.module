@@ -150,7 +150,7 @@ function mini_menu_block_view($delta = '') {
  *
  * Get the level-2 navigation and displays it per menus.
  */
-function mini_menu_block_primary($elements) {
+function mini_menu_block_primary($elements = array()) {
   // Render the home as a menu link itself.
   $elements['menu']['#theme_wrappers'] = array('menu_tree__primary');
   $elements['menu']['home'] = array(
@@ -262,7 +262,7 @@ function theme_menu_footer($variables) {
  *
  * Displays the login link in the user menu as a normal item.
  */
-function disney_menu_menu_alter(&$items) {
+function mini_menu_menu_alter(&$items) {
   // Displays this menu link in the drop-down.
   // TODO: use the position if allowed ?
   $items['user']['options'] = array('position' => 'right');

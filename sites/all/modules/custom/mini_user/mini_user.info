@@ -1,0 +1,9 @@
+name = User
+description = Definition of roles, permissions and fields for user entity.
+core = 7.x
+package = minorite groupe
+version = 7.x-1.0
+project = mini_user
+dependencies[] = mini_system
+dependencies[] = entity
+dependencies[] = features
