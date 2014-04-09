@@ -190,7 +190,7 @@ Top toolbar wrapper
 .body-toolbar-up ul.user-access-menu {height:24px; line-height:24px;}
 .body-toolbar-up ul.user-access-menu li:not(:last-child) {border-right:solid 1px #6F6F6F;}
 .body-toolbar-up ul.user-access-menu li:last-child {padding-right:7px; vertical-align:top;} /*Chrome goes wacky coz inline-block*/
-.not-logged-in .body-toolbar-up .w-2 ul.user-access-menu li.first {float: left; border-right: 0px;}
+/*.not-logged-in .body-toolbar-up .w-2 ul.user-access-menu li.first {float: left; border-right: 0px;}*/
 /**/
 .custom-select-user-wrapper {display:inline-block; height:22px; line-height:22px; padding:0 3px 2px 25px; background:#fff url(../images/select-user-custom-bg01.png) no-repeat scroll 3px 49%; -webkit-border-radius:3px; border-radius:3px;}
 .custom-select-user-wrapper>.custom-select-user {padding:0; background-color:#fff; border-width:0;}

@@ -7,3 +7,4 @@ project = mini_user
 dependencies[] = mini_system
 dependencies[] = entity
 dependencies[] = features
+dependencies[] = user

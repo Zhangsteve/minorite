@@ -23,13 +23,14 @@ function minorite_theme($existing, $type, $theme, $path) {
   return $templates + array(
     // User related templates.
     'user_profile' => array(
+      'render element' => 'element',
       'template' => 'user-profile',
-      'path' => drupal_get_path('module', 'minorite_employee') . '/templates',
+      'path' => drupal_get_path('module', 'mini_user') . '/templates',
     ),
     'user_profile_form' => array(
       'render element' => 'form',
       'template' => 'user-profile-form',
-      'path' => drupal_get_path('module', 'minorite_employee') . '/templates',
+      'path' => drupal_get_path('module', 'mini_user') . '/templates',
     ),
 
     'form_element_help' => array(
@@ -137,4 +138,22 @@ function minorite_js_alter(&$javascript) {
   if (isset($javascript[$disney . '/misc/jquery.nicescroll.min.js'])) {
     $javascript[$disney . '/misc/jquery.nicescroll.min.js']['scope'] = 'footer';
   }
+}
+/**
+ * Gets a block suitable for drupal_render().
+ *
+ * @param $module
+ *  Name of the module that implements the block to load.
+ * @param $delta
+ *  Unique ID of the block within the context of $module.
+ *
+ * @deprecated This function has been deprecated, for performance reasons. Uses
+ * disney_render_blocks() with an (s) to avoid multiple queries instead.
+ *
+ * @return
+ *  A renderable array.
+ */
+function mini_render_block($module, $delta) {
+  $block = _block_render_blocks(array(block_load($module, $delta)));
+  return _block_get_renderable_array($block);
 }

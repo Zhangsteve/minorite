@@ -32,7 +32,7 @@ function mini_system_update_7001() {
 /**
  * Re-configure field body.
  */
-function mini_system_update_7112() {
+function mini_system_update_7002() {
   $field = field_info_field('body');
   $field['entity_types'] = array();
   $prior_field = field_read_field('body');
@@ -58,4 +58,22 @@ function mini_system_update_7112() {
 
   // Invoke external hooks after the cache is cleared for API consistency.
   module_invoke_all('field_update_field', $field, $prior_field, $has_data);
+}
+/*
+ * enable mini_menu module
+ */
+function mini_system_update_7003() {
+  module_enable('mini_menu');
+}
+/*
+ * enable mini_search module
+*/
+function mini_system_update_7004() {
+  module_enable('mini_search');
+}
+/*
+ * enable mini_user module
+*/
+function mini_system_update_7005() {
+  module_enable('mini_user');
 }
