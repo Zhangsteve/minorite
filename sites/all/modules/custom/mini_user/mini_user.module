@@ -1,0 +1,395 @@
+<?php
+
+/**
+ * Implements hook_boot().
+ *
+ * This hook removes all roles from the current user if connecting from an
+ * external network.
+ *
+ * @see settings.php where $external variable is set.
+ */
+function mini_user_boot() {
+
+}
+
+/**
+ * Implements hook_init().
+ */
+function mini_user_init() {
+  global $user;
+  // TODO: move this condition on user loggin and prevent loggin if user does
+  // not accepts the t&c.
+
+  // If we are not already on the legal terms page, we redirect the logged user
+  // to this page, except if he has already accepted the terms.
+  // We also check if the HTTP request is not an AJAX request, to prevent some
+  // bugs (with Administration menu module especially).
+  if(mini_user_legal_terms_access() && current_path() != 'legal-terms' && current_path() != 'user/logout' && !(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest')) {
+    drupal_goto('legal-terms', array(
+      'query' => drupal_get_destination(),
+    ));
+  }
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function mini_user_entity_info_alter(&$info) {
+
+}
+/**
+ * Implements hook_menu_alter().
+ */
+function mini_user_menu_alter(&$items) {
+  // Changes core registration process.
+  $items['user/register'] = array(
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('mini_user_register_wizard'),
+      'access callback' => 'user_is_anonymous',
+      'type' => MENU_NORMAL_ITEM,
+      'file' => 'mini_user.pages.inc',
+      'file path' => drupal_get_path('module', 'mini_user'),
+      'menu_name' => 'user-menu',
+      'description' => 'Register page',
+  );
+
+  // This menu item is now a level-2 navigation, it drops property inheritance
+  // of its parent so we need to re-set them here.
+  $items['user/login']['type'] = MENU_NORMAL_ITEM;
+  $items['user/login']['page callback'] = 'user_page';
+  $items['user/login']['menu_name'] = 'user-menu';
+  $items['user/login']['file'] = 'user.pages.inc';
+  $items['user/login']['file path'] = drupal_get_path('module', 'user');
+  $items['user/login']['weight'] = 10;
+
+  // Changes password request process.
+  $items['user/password']['title'] = 'Password forgotten';
+  $items['user/password']['type'] = MENU_NORMAL_ITEM;
+  $items['user/password']['menu_name'] = 'user-menu';
+
+  $items['user/%user']['title'] = 'My account';
+  unset($items['user/%user']['title callback']);
+  unset($items['user/%user']['title arguments']);
+
+  // The people list page is now custom to add field and make the orderBy working
+  $items['admin/people']['page callback'] = 'mini_user_user_admin';
+
+  // Make the help page unavalaible to all, even the super admin
+  $items['admin/help']['access callback'] = FALSE;
+}
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function mini_user_form_user_profile_form_alter(&$form, &$form_state, $form_id) {
+  // Removes default user editing.
+  $form['account']['#access'] = FALSE;
+  $form['picture']['#access'] = FALSE;
+  $form['ckeditor']['#access'] = FALSE;
+  $form['contact']['#access'] = FALSE;
+  $form['metatags']['#access'] = FALSE;
+  $form['metatags']['#access'] = FALSE;
+  $instances = field_info_instances('user', 'user');
+
+  $form['phone'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Phone number'),
+      '#default_value' => $form['#user']->phone,
+      '#description' => t('Just your phone number'),
+  );
+  $form['address'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Address'),
+      '#default_value' => $form['#user']->address,
+      '#description' => t('Your location'),
+  );
+  $form['mail'] = array(
+      '#type' => 'textfield',
+      '#title' => t('My email newsletter'),
+      '#default_value' => $form['#user']->mail,
+      '#description' => t('Email address on which you wish to receive the newsletter (subscription necessary).'),
+      '#theme_wrappers' => array('form_element', 'container'),
+  );
+  $form['actions']['cancel']['#access'] = FALSE;
+  $form['actions']['submit']['#value'] = t('save');
+  $form['#validate'] = array('mini_user_form_user_profile_form_validate');
+  $form['#submit'] = array('mini_user_form_submit');
+}
+/**
+ * Form validation handler for the mail.
+ */
+function mini_user_form_user_profile_form_validate($form, &$form_state) {
+  // Trim whitespace from mail, to prevent confusing 'e-mail not valid'
+  // warnings often caused by cutting and pasting.
+  $mail = trim($form_state['input']['mail']);
+  form_set_value($form['account']['mail'], $mail, $form_state);
+
+  // Validate the e-mail address, and check if it is taken by an existing user.
+  /*if ($error = user_validate_mail($form_state['values']['mail'])) {
+  form_set_error('mail', $error);
+  }
+  else*/
+  if ((bool) db_select('users')->fields('users', array('uid'))->condition('uid', $form['#user']->uid, '<>')->condition('mail', db_like($form_state['values']['mail']), 'LIKE')->range(0, 1)->execute()->fetchField()) {
+    // Format error message dependent on whether the user is logged in or not.
+    if ($GLOBALS['user']->uid) {
+      form_set_error('mail', t('The e-mail address %email is already taken.', array('%email' => $form_state['values']['mail'])));
+    }
+    else {
+      form_set_error('mail', t('The e-mail address %email is already registered. <a href="@password">Have you forgotten your password?</a>', array('%email' => $form_state['values']['mail'], '@password' => url('user/password'))));
+    }
+  }
+
+  entity_form_field_validate('user', $form, $form_state);
+
+  $errors = form_get_errors();
+  if (empty($errors)) {
+    try {
+      // Delete the newsletter subscription for empty mail
+      if (empty($form_state['values']['mail'])) {
+        db_delete('simplenews_subscriber')->condition('uid', $GLOBALS['user']->uid)->execute();
+      }
+    }
+    catch (Exception $exception) {
+      form_set_error('account', t('Service temporarily unavailable, please try again later.'));
+    }
+  }
+}
+function mini_user_form_submit($form, &$form_state) {
+  user_profile_form_submit($form, $form_state);
+  $form_state['redirect'] = 'user';
+}
+
+/**
+ * Implements hook_admin_paths_alter().
+ *
+ * Removes 'user/ * /edit' path from being flagged administrative.
+ */
+function mini_user_admin_paths_alter(&$paths) {
+  $paths['user/*/edit'] = FALSE;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function mini_user_menu() {
+  $items = array();
+
+  // Declare legal terms page.
+  $items['legal-terms'] = array(
+    'title' => 'Legal terms ',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mini_user_legal_terms_form'),
+    'access callback' => 1,
+    'file' => 'mini_user.forms.inc',
+    'weight' => 0,
+    'menu_name' => 'footer',
+  );
+
+  return $items;
+}
+
+/**
+ * Determine whether the current user has the role specified.
+ *
+ * @return bool
+ *   True if the acting user hasn't accepted the legal terms.
+ */
+function mini_user_legal_terms_access() {
+  global $user;
+  return FALSE;
+  if ($user->uid && !$user->termsAcceptance) {
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Implements hook_user_presave().
+ */
+function mini_user_user_presave(&$edit, $account, $category) {
+
+}
+
+/**
+ * Page callback: Generates the appropriate user administration form.
+ *
+ * This function generates the user registration, multiple user cancellation,
+ * or filtered user list admin form, depending on the argument and the POST
+ * form values.
+ *
+ * @param string $callback_arg
+ *   (optional) Indicates which form to build. Defaults to '', which will
+ *   trigger the user filter form. If the POST value 'op' is present, this
+ *   function uses that value as the callback argument.
+ *
+ * @return string
+ *   A renderable form array for the respective request.
+ */
+function mini_user_user_admin($callback_arg = '') {
+  $op = isset($_POST['op']) ? $_POST['op'] : $callback_arg;
+
+  switch ($op) {
+    case t('Create new account'):
+    case 'create':
+      $build['user_register'] = drupal_get_form('user_register_form');
+      break;
+    default:
+      if (!empty($_POST['accounts']) && isset($_POST['operation']) && ($_POST['operation'] == 'cancel')) {
+        $build['user_multiple_cancel_confirm'] = drupal_get_form('user_multiple_cancel_confirm');
+      }
+      else {
+        module_load_include('inc', 'mini_user', 'mini_user.forms');
+        $build['user_filter_form'] = drupal_get_form('user_filter_form');
+        $build['user_admin_account'] = drupal_get_form('mini_user_admin_account');
+      }
+  }
+
+  return $build;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for contact_site_form().
+ */
+function mini_user_form_contact_site_form_alter(&$form, &$form_state, $form_id) {
+  global $user;
+
+  // Add some classes to the contact form.
+  $form['#attributes'] = array(
+    'class' => array('contact-form', 'form-item-has-shadow'),
+  );
+
+  // Add a markup with the form subtitle.
+  $form['contact_information'] = array(
+    '#markup' => '<h2>' . t('Ask your question') . '</h2>',
+  );
+
+  // Alter the name field.
+  $form['name']['#title'] = t('Name');
+  $form['name']['#size'] = 20;
+
+  // Add a firstname field to the contact form.
+  $form['firstname'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Firstname'),
+    '#size' => 20,
+    '#required' => TRUE,
+  );
+
+  // Alter the mail field.
+  $form['mail']['#title'] = t('Email');
+  $form['mail']['#size'] = 20;
+
+  // Alter the subject field.
+  $form['subject']['#size'] = 20;
+
+  // Alter the message field.
+  $form['message']['#cols'] = 65;
+  $form['message']['#rows'] = 7;
+
+  // Add a reset action button.
+  $form['actions']['reset'] = array(
+    '#type' => 'button',
+    '#value' => '<i></i>' . t('Reset'),
+    '#weight' => 100,
+    '#validate' => array(),
+    '#attributes' => array(
+      'onclick' => 'this.form.reset(); return false;',
+      'class' => array('button-ico-eraser'),
+    ),
+  );
+
+  // Hide the copy field.
+  $form['copy']['#access'] = FALSE;
+
+  // If the user is connected, the name & firstname fields are filled with the
+  // full name.
+  if ($user->uid) {
+    $form['name']['#default_value'] = $user->lastName;
+    $form['firstname']['#default_value'] = $user->firstName;
+  }
+
+  array_unshift($form['#submit'], 'mini_user_site_form_submit');
+}
+
+/**
+ * Form submission handler for contact_site_form().
+ */
+function mini_user_site_form_submit($form, &$form_state) {
+  $form_state['values']['name'] = $form_state['values']['firstname'] . ' ' . $form_state['values']['name'];
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function mini_user_block_info() {
+  // Declare the legal terms block.
+  $blocks['legal_terms'] = array(
+    'info' => t('Minorite Group User: legal terms'),
+    'status' => FALSE,
+    'title' => 'Read and accept the terms and conditions',
+    'cache' => DRUPAL_CACHE_GLOBAL,
+    'i18n_mode' => 1,
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_configure().
+ */
+function mini_user_block_configure($delta = '') {
+  $form = array();
+
+  if ($delta == 'legal_terms') {
+    $content = variable_get('mini_user_legal_terms_content', array('value' => ''));
+
+    // Declare a WYSIWYG field for the legal terms block content.
+    $form['mini_user_legal_terms_content'] = array(
+      '#type' => 'text_format',
+      '#title' => t('Legal terms contents'),
+      '#description' => t('This text will appear in the legal terms block.'),
+      '#default_value' => t($content['value']),
+      '#format' => (isset($content['format']) ? $content['format'] : 'filtered_html'),
+    );
+  }
+
+  return $form;
+}
+
+/**
+ * Implements hook_block_save().
+ */
+function mini_user_block_save($delta = '', $edit = array()) {
+  if ($delta == 'legal_terms') {
+    variable_set('mini_user_legal_terms_content', $edit['mini_user_legal_terms_content']);
+  }
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function mini_user_block_view($delta = '') {
+  switch ($delta) {
+    case 'legal_terms':
+      $content = variable_get('mini_user_legal_terms_content', array('value' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam non semper nunc. Praesent vel tellus vel nibh suscipit volutpat. Integer eu vestibulum ligula, id gravida turpis. Quisque malesuada, ligula sit amet bibendum consequat, sapien enim gravida risus, at fermentum lacus tortor a leo. Nunc nisl purus, tincidunt et enim vel, adipiscing varius dui. Etiam cursus lacinia diam, ac ultricies lorem scelerisque at. Sed nec mauris auctor, accumsan nulla at, congue purus. Mauris cursus, dolor vitae posuere condimentum, magna nisi rutrum odio, ac blandit lacus purus at leo. Aenean eget interdum lacus, et volutpat quam. Etiam blandit sem dignissim, rhoncus enim eu, dictum orci. Praesent sed gravida dolor. Ut venenatis lorem in suscipit vulputate. Quisque elementum egestas odio sit amet porta. Vivamus dapibus urna et adipiscing posuere. Nulla vel aliquam sapien. Pellentesque tincidunt enim eu tellus volutpat lobortis. '));
+
+      $block['subject'] = 'Read and accept the terms and conditions';
+      $block['content'] = t($content['value']);
+      break;
+  }
+  return $block;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function mini_user_theme($existing, $type, $theme, $path) {
+  return array(
+    'contact_site_form' => array(
+      'template' => 'contact-site-form',
+      'path' => $path . '/templates',
+      'arguments' => array('form' => NULL),
+      'render element' => 'form',
+    ),
+  );
+}

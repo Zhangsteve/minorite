@@ -1,0 +1,107 @@
+<?php
+
+/**
+ * @file
+ * Installation functions for Disney User module.
+ */
+
+/**
+ * Implements hook_schema_alter().
+ */
+function mini_user_schema_alter(&$schema) {
+  // Adds first name field to users schema.
+  $schema['users']['fields']['firstName'] = array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => 'First name.',
+  );
+  // Adds last name field to users schema.
+  $schema['users']['fields']['lastName'] = array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => 'Last name.',
+  );
+  // Adds legal terms acceptance field to users schema.
+  $schema['users']['fields']['termsAcceptance'] = array(
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 0,
+    'size' => 'tiny',
+    'description' => 'Whether the user has accepted the legal terms conditions(1) or not(0).',
+  );
+  //Adds phone field to users schema.
+  $schema['users']['fields']['phone'] = array(
+      'type' => 'int',
+      'not null' => TRUE,
+      'default' => 0,
+      'size' => 'tiny',
+      'description' => 'Phone number.',
+  );
+  //Adds addresse field to users schema.
+  $schema['users']['fields']['address'] = array(
+      'type' => 'int',
+      'not null' => TRUE,
+      'default' => 0,
+      'size' => 'tiny',
+      'description' => 'Address.',
+  );
+}
+
+/**
+ * Implements hook_install().
+ */
+function mini_user_install() {
+  $spec = array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => 'First name.',
+  );
+  db_add_field('users', 'firstName', $spec);
+
+  $spec = array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => 'Last name.',
+  );
+  db_add_field('users', 'lastName', $spec);
+
+  $spec = array(
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => TRUE,
+      'default' => '',
+      'description' => 'Phone number.',
+  );
+  db_add_field('users', 'phone', $spec);
+
+  $spec = array(
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => TRUE,
+      'default' => '',
+      'description' => 'Address.',
+  );
+  db_add_field('users', 'address', $spec);
+
+  // Adds legal terms acceptance field to users schema.
+  $spec = array(
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 0,
+    'size' => 'tiny',
+    'description' => 'Whether the user has accepted the legal terms conditions(1) or not(0).',
+  );
+  db_add_field('users', 'termsAcceptance', $spec);
+
+  // Do not allow user to configures its time zone.
+  variable_set('configurable_timezones', 0);
+
+}
