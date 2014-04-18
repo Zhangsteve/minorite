@@ -1,0 +1,16 @@
+<?php
+/**
+ *  delete the variable inutil
+ */
+
+function mini_carrousel_update_7001() {
+  for ($i = 1; $i < 7; $i++) {
+    variable_del('mini_carrousel_image_fid_' . $i);
+    // Stores the title in a variable.
+    variable_del('mini_carrousel_title_' . $i);
+    // Stores the picture extension in a variable.
+    variable_del('mini_carrousel_description_' . $i);
+    // Stores the picture extension in a variable.
+    variable_del('mini_carrousel_link_' . $i);
+  }
+}

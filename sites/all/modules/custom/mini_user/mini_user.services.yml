@@ -1,0 +1,7 @@
+services:
+  user.entity.storage:
+    class: Mini\User\Entity\UserStorageController
+    factory_class: Drupal\Core\DependencyInjection\EntityControllerFactory
+    factory_method: get
+    arguments:
+      - 'user'

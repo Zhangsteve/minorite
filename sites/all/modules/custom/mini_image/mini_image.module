@@ -1,0 +1,273 @@
+<?php
+
+/**
+ * @file
+ * Handles general site configuration for Minorite.
+ *
+ * @author xianchi zhang <xianchi.zhang@gmail.com>
+ */
+
+include_once 'mini_image.features.inc';
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function mini_image_field_formatter_info() {
+  $formatters = array(
+    'image_carousel' => array(
+      'label' => t('Carousel'),
+      'field types' => array('image'),
+      'settings' => array('image_style' => ''),
+    ),
+  );
+
+  return $formatters;
+}
+
+/**
+ * Implements hook_stream_wrappers().
+ */
+/*function mini_image_stream_wrappers() {
+  // Add a image stream wrapper for the my hub image upload, so it's not include on the BO mediatheque
+  return array('myhubimage' => array(
+      'name' => t('My hub image'),
+      'class' => 'DrupalPublicStreamWrapper',
+      'description' => t('My hub image files served by the webserver.'),
+      'type' => STREAM_WRAPPERS_LOCAL_HIDDEN,
+    ),
+    'advertisement' => array(
+      'name' => t('Advertisement'),
+      'class' => 'DrupalPublicStreamWrapper',
+      'description' => t('Advertisement image files served by the webserver.'),
+      'type' => STREAM_WRAPPERS_LOCAL_HIDDEN,
+    ),
+  );
+}*/
+
+/**
+ * Implements hook_image_styles_alter().
+ */
+function mini_image_image_styles_alter(&$styles) {
+  $styles['large'] = array(
+    'name' => 'large',
+    'label' => 'Large (302x201)',
+    'effects' => array(
+      0 => array(
+        'label' => 'Scale and crop',
+        'help' => 'Scale and crop will maintain the aspect-ratio of the original image, then crop the larger dimension. This is most useful for creating perfectly square thumbnails without stretching the image.',
+        'effect callback' => 'image_scale_and_crop_effect',
+        'dimensions callback' => 'image_resize_dimensions',
+        'form callback' => 'image_resize_form',
+        'summary theme' => 'image_resize_summary',
+        'module' => 'image',
+        'name' => 'image_scale_and_crop',
+        'data' => array(
+          'width' => 302,
+          'height' => 201,
+        ),
+        'weight' => 1,
+      ),
+    ),
+  );
+
+  $styles['medium'] = array(
+    'name' => 'medium',
+    'label' => 'Medium (117x118)',
+    'effects' => array(
+      0 => array(
+        'label' => 'Scale and crop',
+        'help' => 'Scale and crop will maintain the aspect-ratio of the original image, then crop the larger dimension. This is most useful for creating perfectly square thumbnails without stretching the image.',
+        'effect callback' => 'image_scale_and_crop_effect',
+        'dimensions callback' => 'image_resize_dimensions',
+        'form callback' => 'image_resize_form',
+        'summary theme' => 'image_resize_summary',
+        'module' => 'image',
+        'name' => 'image_scale_and_crop',
+        'data' => array(
+          'width' => 177,
+          'height' => 118,
+        ),
+        'weight' => 2,
+      ),
+    ),
+  );
+
+  $styles['thumbnail'] = array(
+    'name' => 'thumbnail',
+    'label' => 'Thumbnail (75xh)',
+    'effects' => array(
+      0 => array(
+        'label' => 'Scale',
+        'help' => 'Scaling will maintain the aspect-ratio of the original image. If only a single dimension is specified, the other dimension will be calculated.',
+        'effect callback' => 'image_scale_effect',
+        'dimensions callback' => 'image_scale_dimensions',
+        'form callback' => 'image_scale_form',
+        'summary theme' => 'image_scale_summary',
+        'module' => 'image',
+        'name' => 'image_scale',
+        'data' => array(
+          'width' => 75,
+          'height' => '',
+          'upscale' => 0,
+        ),
+        'weight' => 0,
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function mini_image_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $image_styles = image_style_options(FALSE, PASS_THROUGH);
+  $element['image_style'] = array(
+    '#title' => t('Image style'),
+    '#type' => 'select',
+    '#default_value' => $settings['image_style'],
+    '#empty_option' => t('None (original image)'),
+    '#options' => $image_styles,
+  );
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function mini_image_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $summary = array();
+
+  $image_styles = image_style_options(FALSE, PASS_THROUGH);
+  // Unset possible 'No defined styles' option.
+  unset($image_styles['']);
+  // Styles could be lost because of enabled/disabled modules that defines
+  // their styles in code.
+  if (isset($image_styles[$settings['image_style']])) {
+    $summary[] = t('Image style: @style', array('@style' => $image_styles[$settings['image_style']]));
+  }
+  else {
+    $summary[] = t('Original image');
+  }
+
+  return implode('<br />', $summary);
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function mini_image_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+
+  $element['image'] = array(
+    '#theme' => 'image_formatter',
+    '#item' => $items[0],
+    '#image_style' => $display['settings']['image_style'],
+  );
+
+  $element['nav'] = array(
+    '#theme' => 'links',
+    '#links' => array(),
+    '#attributes' => array('class' => array('nav', 'clearfix')),
+  );
+  foreach ($items as $delta => $item) {
+    $uri = image_style_url($display['settings']['image_style'], $item['uri']);
+    $element['nav']['#links'][$delta] = array(
+      'title' => theme('image', array('path' => $uri) + $item),
+      'href' => file_create_url($uri),
+      'html' => TRUE,
+    );
+  }
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_schema_alter().
+ *
+ * Alter the image field to allow storage of image position and caption.
+ */
+function mini_image_field_schema_alter(&$schema, $field) {
+  if ($field['type'] == 'image') {
+    // Adds a position column.
+    $schema['columns']['position'] = array(
+      'description' => 'The image position as a CSS class.',
+      'type' => 'varchar',
+      'length' => 32,
+      'not null' => FALSE,
+    );
+    // Adds a caption column.
+    $schema['columns']['caption'] = array(
+      'description' => 'The image caption text.',
+      'type' => 'varchar',
+      'length' => 128,
+      'not null' => FALSE,
+    );
+  }
+}
+
+/**
+ * Perform alterations on Field API field types.
+ *
+ * @param $info
+ *   Array of information on field types exposed by hook_field_info()
+ *   implementations.
+ */
+function mini_image_field_info_alter(&$info) {
+  // Adds caption settings on 'image' formatter.
+  $info['image']['instance_settings']['caption_field'] = 0;
+  // Adds position settings on 'image' formatter.
+  $info['image']['instance_settings']['position_field'] = 0;
+}
+
+/**
+ * Alter forms for 'image' widgets.
+ *
+ * @see hook_field_widget_form()
+ * @see hook_field_widget_WIDGET_TYPE_form_alter()
+ */
+function mini_image_field_widget_image_image_form_alter(&$element, &$form_state, $context) {
+  foreach (element_children($element) as $delta) {
+    // Adds extra functionalities provided by the widget (caption and position).
+    $element[$delta]['#process'][] = 'mini_image_field_widget_process';
+  }
+}
+
+/**
+ * An element #process callback for the image_image field type.
+ *
+ * Expands the image_image type to include the caption and position fields.
+ */
+function mini_image_field_widget_process($element, &$form_state, $form) {
+  $item = $element['#value'];
+  $instance = field_widget_instance($element, $form_state);
+  $settings = $instance['settings'];
+
+  // Add the additional caption and position fields.
+  $element['position'] = array(
+    '#type' => 'radios',
+    '#title' => t('Position'),
+    '#options' => array('left' => t('Left'), 'fullwidth' => t('Full'), 'right' => t('Right')),
+    '#default_value' => isset($item['position']) ? $item['position'] : NULL,
+    '#description' => t('The position of the image to be displayed.'),
+    '#weight' => -1,
+    '#access' => (bool) $item['fid'] && $settings['position_field'],
+  );
+  $element['caption'] = array(
+    '#title' => t('Caption'),
+    '#type' => 'textfield',
+    '#default_value' => isset($item['caption']) ? $item['caption'] : NULL,
+    '#description' => t('The title, short explanation, or description accompanying the image.'),
+    '#maxlength' => 128,
+    '#weight' => -2,
+    '#access' => (bool) $item['fid'] && $settings['caption_field'],
+  );
+
+  return $element;
+}

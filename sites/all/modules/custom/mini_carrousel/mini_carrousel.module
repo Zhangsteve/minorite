@@ -1,0 +1,279 @@
+<?php
+
+/**
+ * Elements max by a carousel
+ */
+define('MINI_CARROUSEL_MAX_ITEM', 7);
+define('MINI_CARROUSEL_IMG_PATH', 'public://images/carrousel');
+/**
+ * @file
+ * Manage mini carrousel block
+ */
+
+/**
+ * Implements hook_block_info().
+ */
+function mini_carrousel_block_info() {
+  $blocks['carrousel'] = array(
+      'info' => t('Home carrousel'),
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_configure().
+ */
+function mini_carrousel_block_configure($delta = '') {
+  $form['title'] = array(
+    '#access' => FALSE,
+    '#description' => '',
+    '#type' => 'textfield',
+    '#value' => '',
+  );
+  $form['auto'] = array(
+    '#title' => t('Auto rotation'),
+    '#description' => t('Set the auto rotation of the carousel on the homepage.'),
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('mini_carrousel_auto', 1),
+  );
+  for ($i = 1; $i < MINI_CARROUSEL_MAX_ITEM; $i++) {
+    $form['slide' . $i] = array(
+      '#type' => 'fieldset',
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      '#title' => t('Slide-' . $i),
+    );
+    $form['slide' . $i]['slide_picture_current-' . $i] = array(
+      '#markup' => theme('carrousel_admin', array('sid' => $i)),
+    );
+
+    $form['slide' . $i]['slide_picture_upload-' . $i] = array(
+      '#type' => 'media',
+      '#title' => t('Upload picture') . ' (1241x350 pixels)',
+      '#size' => 48,
+      '#process' => array('mini_media_element_process'),
+      '#description' => t('Select a picture for slide.'),
+      '#default_value' => array('fid' => variable_get('mini_carrousel_image_fid_' . $i, 0)),
+      '#upload_location' => MINI_CARROUSEL_IMG_PATH,
+      '#upload_validators' => array(
+          'file_validate_extensions' => array('gif png jpg jpeg'),
+      ),
+    );
+    $form['slide' . $i]['slide_title-' . $i] = array(
+      '#type' => 'textfield',
+      '#title' => t('Title'),
+      '#default_value' => variable_get('mini_carrousel_title_' . $i, NULL),
+    );
+    $form['slide' . $i]['slide_description-' . $i] = array(
+      '#type' => 'textarea',
+      '#title' => t('Description'),
+      '#description' => t('Add text which will appear on slide.'),
+      '#default_value' => variable_get('mini_carrousel_description_' . $i, NULL),
+    );
+    $form['slide' . $i]['slide_link-' . $i] = array(
+      '#type' => 'textfield',
+      '#title' => t('Link to page'),
+      '#description' => t('Add a link to the page.'),
+      '#default_value' => variable_get('mini_carrousel_link_' . $i, NULL),
+    );
+  }
+  return $form;
+}
+/**
+ * override the method media_element_process for adapt our multi-item require.
+ * @see media.module
+ */
+function mini_media_element_process(&$element, &$form_state, $form){
+  $fid = isset($element['#value']['fid']) ? $element['#value']['fid'] : 0;
+  $file = file_load($fid);
+  $path = drupal_get_path('module', 'media');
+
+  $element['title'] = array(
+    '#type' => 'item',
+    '#title' => $element['#title'],
+    '#markup' => '',
+    '#description' => $element['#description'],
+    '#required' => $element['#required'],
+  );
+
+  //@TODO: This should be loaded from the JS in case of a failed form submission.
+  $markup = '';
+  if (!empty($file)) {
+    $preview = media_get_thumbnail_preview($file);
+    $markup = drupal_render($preview);
+  }
+  $element['preview'] = array(
+    '#type' => 'item',
+    '#markup' => $markup,
+    '#prefix' => '<div class="preview launcher">',
+    '#suffix' => '</div><a class="button launcher" href="#">' . media_variable_get('field_select_media_text') . '</a><a class="button remove" href="#">' . media_variable_get('field_remove_media_text') . '</a>',
+  );
+
+  /**
+   * This section handles fields on media when media is added as a field.
+   * It is pretty unpolished, so hiding it for now.
+   */
+//  $element['more_fields_wrapper'] = array(
+//    '#type' => 'fieldset',
+//    '#collapsible' => TRUE,
+//    '#collapsed' => TRUE,
+//    '#title' => t('Meta-data'),
+//  );
+//
+//  $element['more_fields_wrapper']['edit'] = array(
+//    '#type' => 'markup',
+//    '#markup' => l(t('Edit'), 'media/' . $fid . '/edit', array('query' => array('render' => 'media-popup'), 'attributes' => array('class'=> array('media-edit-link')))),
+//  );
+//
+//  // Oh god, there must be a better way to add a wrapper.
+//  $parents = $element['#parents'];
+//  array_push($parents, 'more_fields');
+//
+//  if ($file) {
+//    $element['more_fields_wrapper']['more_fields'] = file_view($file, 'media_preview');
+//    unset($element['more_fields_wrapper']['more_fields']['file']);
+//  }
+
+  //make multipe upload
+  static $qt = 1;
+  if($qt < MINI_CARROUSEL_MAX_ITEM){
+    //@HACK: @todo: this is so I can find it in media.js without putting every field in a settings variable.
+    // If I make it hidden (which it should be) it will go to the top of the form... I know this sucks.
+    // This is hidden in media.css
+    $element['fid'.$qt] = array(
+      '#type' => 'textfield',
+      '#default_value' => $fid,
+      '#attributes' => array('class' => array('fid')),
+    );
+    $qt++;
+  }
+  // Media browser attach code.
+  $element['#attached']['js'][] = drupal_get_path('module', 'media') . '/js/media.js';
+
+  $setting = array();
+  $setting['media']['elements'][$element['#id']] = $element['#media_options'];
+
+  $element['#attached']['js'][] = array(
+    'type' => 'setting',
+    'data' => $setting,
+  );
+
+  // hmm... Might need to think about this.
+  // All settings would likely apply to all media in a multi-value, but what about passing the existing fid?
+
+  module_load_include('inc', 'media', 'includes/media.browser');
+  media_attach_browser_js($element);
+  return $element;
+  // @todo: make this work for file and image fields
+}
+/**
+ * Implements hook_block_save().
+ */
+function mini_carrousel_block_save($delta = NULL, $edit = array()) {
+  variable_set('mini_carrousel_auto', $edit['auto']);
+  for ($i = 1; $i < MINI_CARROUSEL_MAX_ITEM; $i++) {
+    //get old fid.
+    // Save the file if there is
+    if ($edit['fid' . $i] > 0) {
+      $file = file_load($edit['fid' . $i]);
+      if ($file->status == 0) {
+        $file->status = FILE_STATUS_PERMANENT;
+        file_save($file);
+        $block = block_load('mini_carrousel', 'carrousel');
+        file_usage_add($file, 'mini_carrousel', 'block', $block->bid);
+      }
+      $fid = $file->fid;
+      variable_set('mini_carrousel_image_fid_' . $i, $fid);
+      // Stores the title in a variable.
+      variable_set('mini_carrousel_title_' . $i, $edit['slide_title-' . $i]);
+      // Stores the picture extension in a variable.
+      variable_set('mini_carrousel_description_' . $i, $edit['slide_description-' . $i]);
+      // Stores the picture extension in a variable.
+      variable_set('mini_carrousel_link_' . $i, $edit['slide_link-' . $i]);
+    }else{
+      variable_del('mini_carrousel_image_fid_' . $i);
+      // Stores the title in a variable.
+      variable_del('mini_carrousel_title_' . $i);
+      // Stores the picture extension in a variable.
+      variable_del('mini_carrousel_description_' . $i);
+      // Stores the picture extension in a variable.
+      variable_del('mini_carrousel_link_' . $i);
+    }
+  }
+}
+/**
+ * Implements hook_block_view().
+ */
+function mini_carrousel_block_view($delta = NULL) {
+
+  $settings = array('auto' => variable_get('mini_carrousel_auto', 1));
+  // Pass argument to the JS
+  drupal_add_js(array('mini_carrousel' => $settings), 'setting');
+  drupal_add_js(drupal_get_path('theme', 'minorite') . '/js/jquery.bxslider.min.js');
+
+  $block = array();
+  $block['subject'] = t('Home carousel');
+  $block['content']['#theme'] = 'carrousel';
+  $block['carrousel'] = mini_carrousel_get_items();
+  return $block;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function mini_carrousel_theme() {
+  return array(
+      'carrousel' => array(
+          'variables' => array(),
+      ),
+      'carrousel_admin' => array(
+          'variables' => array(),
+      ),
+  );
+}
+
+/**
+ * mini_carrousel_get_items
+ * @return array
+ */
+function mini_carrousel_get_items() {
+  $items = array();
+  for ($i = 1; $i < MINI_CARROUSEL_MAX_ITEM; $i++) {
+    $item = array();
+    $style = 'slide';
+    $fid = variable_get('mini_carrousel_image_fid_' . $i, 0);
+    $image_file = file_load($fid);
+    if ($image_file) {
+      $image = theme('image_style', array('style_name' => $style, 'path' => $image_file->uri));
+    } else {
+      $image = '';
+    }
+    $link = variable_get('mini_carrousel_link_' . $i, 'system/contribution');
+    if ($image) {
+      $items[] = array(
+          'link' => ($link ? $link : NULL),
+          'title' => truncate_utf8(variable_get('mini_carrousel_title_' . $i, ''), 60, TRUE, '...'),
+          'description' => truncate_utf8(variable_get('mini_carrousel_description_' . $i, ''), 200, TRUE, '...'),
+          'image' => $image,
+      );
+    }
+  }
+  return $items;
+}
+
+/**
+ * theme_carrousel_admin
+ * @param mixed $vars
+ * @return string
+ */
+function theme_carrousel_admin($vars) {
+  $style = 'medium';
+  $fid = variable_get('mini_carrousel_image_fid_' . $vars['sid'], 0);
+  $image_file = file_load($fid);
+  if ($image_file) {
+    $image = theme('image_style', array('style_name' => $style, 'path' => $image_file->uri));
+  } else {
+    $image = '';
+  }
+  return $image;
+}
