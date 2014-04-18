@@ -3,10 +3,10 @@
 /**
  * @file
  *
- * @author Sylvain Lecoy <sylvain.lecoy@gmail.com>
+ * @author Steve zhang <xianchi.zhang@gmail.com>
  */
 
-namespace Disney\System\Browser;
+namespace Mini\System\Browser;
 
 /**
  * Returns browser capabilities based on 'browscap' and 'mobile' module.

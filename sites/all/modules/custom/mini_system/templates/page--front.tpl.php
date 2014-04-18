@@ -104,9 +104,7 @@
     <?php print render($page['highlighted']); ?>
 
     <div id="content" role="main">
-
       <?php print render($carrousel); ?>
-
       <div class="contentcol content-is-home rw">
         <div class="w-1">
           <?php print render($page['content']); ?>

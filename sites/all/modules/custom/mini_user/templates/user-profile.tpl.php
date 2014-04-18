@@ -38,9 +38,12 @@
       <fieldset>
         <legend class="visuallyhidden"><?php print t('My connection data')?></legend>
         <h2><?php print t('My connection data')?></h2>
-        <p class="rw form-rw"><?php print render($user_profile['phone']); ?></p>
-        <p class="rw form-rw"><?php print render($user_profile['address']); ?></p>
-        <p class="rw form-rw"><?php print render($user_profile['mail']); ?></p>
+        <p class="rw form-rw"><label><?php print t('First Name: ');?></label><?php print $elements['#account']->firstName; ?></p>
+        <p class="rw form-rw"><label><?php print t('Last Name: ');?></label><?php print $elements['#account']->lastName; ?></p>
+        <p class="rw form-rw"><label><?php print t('Email: ');?></label><?php print $elements['#account']->mail; ?></p>
+        <p class="rw form-rw"><label><?php print t('Phone Number: ');?></label><?php print $elements['#account']->phone; ?></p>
+        <p class="rw form-rw"><label><?php print t('Address: ');?></label><?php print $elements['#account']->address; ?></p>
+
       </fieldset>
     </div>
 

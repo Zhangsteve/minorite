@@ -27,8 +27,8 @@ function mini_system_boot() {
     $filename = drupal_get_filename('module', $module);
     mini_system_register($module, dirname($filename));
   }
-
   $filename = drupal_get_filename('module', 'mini_system');
+  mini_system_register($module, dirname($filename), '/vendor/psr/log');
 }
 
 /**
@@ -135,12 +135,12 @@ function mini_system_element_info() {
  */
 function mini_system_register($name, $base, $path = '/lib') {
   $loader = drupal_classloader();
-  // Only register Disney's name space.
+  // Only register Mini's name space.
   if (substr($name, 0, 4) === 'mini') {
     $namespaces = array();
     foreach (explode('_', $name) as $component) {
       // Camel\Case the name space.
-      $namespaces[] = ucfirst($component);;
+      $namespaces[] = ucfirst($component);
     }
     $namespace = implode('\\', $namespaces);
     $loader->registerNamespace($namespace, DRUPAL_ROOT . '/' . $base . $path);

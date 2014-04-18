@@ -1,5 +1,21 @@
 <?php
+/**
+ * @file
+ * Code for the Mini Users feature.
+ */
 
+// Drupal registry can't load PSR-0 classes.
+include_once 'lib/Mini/User/Entity/UserStorageControllerInterface.php';
+include_once 'lib/Mini/User/Entity/UserStorageController.php';
+
+/**
+ * User storage controller locator.
+ *
+ * @return Mini\User\Entity\UserStorageControllerInterface
+ */
+function mini_user_storage() {
+  return drupal_container()->get('user.entity.storage');
+}
 /**
  * Implements hook_boot().
  *
@@ -8,10 +24,10 @@
  *
  * @see settings.php where $external variable is set.
  */
-function mini_user_boot() {
+/*function mini_user_boot() {
 
 }
-
+*/
 /**
  * Implements hook_init().
  */
@@ -35,7 +51,7 @@ function mini_user_init() {
  * Implements hook_entity_info_alter().
  */
 function mini_user_entity_info_alter(&$info) {
-
+  $info['user']['controller class'] = 'Mini\User\Entity\UserStorageController';
 }
 /**
  * Implements hook_menu_alter().
@@ -89,18 +105,19 @@ function mini_user_form_user_profile_form_alter(&$form, &$form_state, $form_id) 
   $form['metatags']['#access'] = FALSE;
   $form['metatags']['#access'] = FALSE;
   $instances = field_info_instances('user', 'user');
-
-  $form['phone'] = array(
+  $form['firstName'] = array(
       '#type' => 'textfield',
-      '#title' => t('Phone number'),
-      '#default_value' => $form['#user']->phone,
-      '#description' => t('Just your phone number'),
+      '#title' => t('First Name'),
+      '#default_value' => $form['#user']->firstName,
+      '#description' => t('Your first name.'),
+      '#theme_wrappers' => array('form_element', 'container'),
   );
-  $form['address'] = array(
+  $form['lastName'] = array(
       '#type' => 'textfield',
-      '#title' => t('Address'),
-      '#default_value' => $form['#user']->address,
-      '#description' => t('Your location'),
+      '#title' => t('Last Name'),
+      '#default_value' => $form['#user']->lastName,
+      '#description' => t('Your last name.'),
+      '#theme_wrappers' => array('form_element', 'container'),
   );
   $form['mail'] = array(
       '#type' => 'textfield',
@@ -109,6 +126,21 @@ function mini_user_form_user_profile_form_alter(&$form, &$form_state, $form_id) 
       '#description' => t('Email address on which you wish to receive the newsletter (subscription necessary).'),
       '#theme_wrappers' => array('form_element', 'container'),
   );
+  $form['phone'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Phone number'),
+      '#default_value' => $form['#user']->phone,
+      '#description' => t('Just your phone number'),
+      '#theme_wrappers' => array('form_element', 'container'),
+  );
+  $form['address'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Address'),
+      '#default_value' => $form['#user']->address,
+      '#description' => t('Your location'),
+      '#theme_wrappers' => array('form_element', 'container'),
+  );
+
   $form['actions']['cancel']['#access'] = FALSE;
   $form['actions']['submit']['#value'] = t('save');
   $form['#validate'] = array('mini_user_form_user_profile_form_validate');
@@ -120,8 +152,39 @@ function mini_user_form_user_profile_form_alter(&$form, &$form_state, $form_id) 
 function mini_user_form_user_profile_form_validate($form, &$form_state) {
   // Trim whitespace from mail, to prevent confusing 'e-mail not valid'
   // warnings often caused by cutting and pasting.
-  $mail = trim($form_state['input']['mail']);
-  form_set_value($form['account']['mail'], $mail, $form_state);
+
+  if (!preg_match('/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$/', $form_state['input']['mail'])) {
+    form_set_error('mail', t('Your email address not correct'));
+    return;
+  }else{
+
+  }
+
+  if (!isset($form_state['values']['firstName'])){
+    form_set_error('First Name', t('Your First Name is not correct.'));
+    return;
+  }
+
+  if (!isset($form_state['values']['lastName'])){
+
+    form_set_error('First Name', t('Your Last Name is not correct.'));
+    return;
+  }
+
+  if (!isset($form_state['values']['address'])){
+    form_set_error('First Name', t('Your address is not correct.'));
+    return;
+  }
+
+  if (isset($form_state['values']['phone'])) {
+    if (!preg_match('/^[0-9]{10}$/', $form_state['values']['phone']) ) {
+      form_set_error('name', t('Your mobile number is not correct.'));
+      return;
+    }
+  } else {
+    form_set_error('name', t('Your mobile number is not correct.'));
+    return;
+  }
 
   // Validate the e-mail address, and check if it is taken by an existing user.
   /*if ($error = user_validate_mail($form_state['values']['mail'])) {
@@ -195,7 +258,6 @@ function mini_user_menu() {
  */
 function mini_user_legal_terms_access() {
   global $user;
-  return FALSE;
   if ($user->uid && !$user->termsAcceptance) {
     return TRUE;
   }

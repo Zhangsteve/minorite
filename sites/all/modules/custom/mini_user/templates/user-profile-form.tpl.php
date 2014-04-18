@@ -38,9 +38,11 @@
       <fieldset>
         <legend class="visuallyhidden"><?php print t('My connection data')?></legend>
         <h2><?php print t('My connection data')?></h2>
+        <?php print render($form['firstName']); ?>
+        <?php print render($form['lastName']); ?>
+        <?php print render($form['mail']); ?>
         <?php print render($form['address']); ?>
         <?php print render($form['phone']); ?>
-        <?php print render($form['mail']); ?>
         <?php hide($form['locale']); ?>
       </fieldset>
     </div>

@@ -126,7 +126,9 @@ function minorite_preprocess_entity(&$variables) {
  * Preprocess variables for page.tpl.php
  */
 function minorite_preprocess_page(&$variables) {
-
+  if ($variables['is_front']) {
+    $variables['carrousel'] = mini_render_block('mini_carrousel', 'carrousel'); // TODO: rename to carousel.
+  }
   // Add a new suggestion for the page theme with node type
   if (isset($variables['node'])) {
     if ($variables['node']->type == 'simplenews') {

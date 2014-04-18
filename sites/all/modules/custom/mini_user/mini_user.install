@@ -35,19 +35,19 @@ function mini_user_schema_alter(&$schema) {
   );
   //Adds phone field to users schema.
   $schema['users']['fields']['phone'] = array(
-      'type' => 'int',
+      'type' => 'varchar',
+      'length' => 10,
       'not null' => TRUE,
-      'default' => 0,
-      'size' => 'tiny',
+      'default' => '',
       'description' => 'Phone number.',
   );
   //Adds addresse field to users schema.
   $schema['users']['fields']['address'] = array(
-      'type' => 'int',
-      'not null' => TRUE,
-      'default' => 0,
-      'size' => 'tiny',
-      'description' => 'Address.',
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => 'Address.',
   );
 }
 
@@ -75,7 +75,7 @@ function mini_user_install() {
 
   $spec = array(
       'type' => 'varchar',
-      'length' => 255,
+      'length' => 10,
       'not null' => TRUE,
       'default' => '',
       'description' => 'Phone number.',
@@ -104,4 +104,15 @@ function mini_user_install() {
   // Do not allow user to configures its time zone.
   variable_set('configurable_timezones', 0);
 
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function mini_user_uninstall() {
+  db_drop_field('users', 'firstName');
+  db_drop_field('users', 'lastName');
+  db_drop_field('users', 'phone');
+  db_drop_field('users', 'address');
+  db_drop_field('users', 'termsAcceptance');
 }

@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * User page callback file for the mini_user module.

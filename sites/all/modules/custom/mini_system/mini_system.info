@@ -5,3 +5,6 @@ package = minorite groupe
 version = 7.x-1.0
 project = mini_system
 dependencies[] = classloader
+dependencies[] = features
+dependencies[] = inject
+dependencies[] = ctools

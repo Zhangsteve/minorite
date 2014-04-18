@@ -6,7 +6,7 @@
  * @author Steve zhang <xianchi.zhang@gmail.com>
  */
 
-namespace Minorite\System\Block;
+namespace Mini\System\Block;
 
 /**
  * Prepares a block for caching based on granularity.
