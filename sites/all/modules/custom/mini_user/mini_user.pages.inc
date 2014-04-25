@@ -139,17 +139,23 @@ function mini_user_register_wizard_submit($form, &$form_state) {
   }
   // Try to register the employee, and display the thanks page.
   else {
-    if (!preg_match('/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$/', $form_state['values']['mail'])) {
-      form_set_error('name', t('Your email address is not correct.'));
-      $form_state['step'] = MINI_USER_REGISTER_CANCEL_FORM;
-      $form_state['rebuild'] = TRUE;
+    $uid = check_mail_exsite($form_state['values']['mail']);
+    if ($uid) {
+      form_set_error('name', t('The email address is already existed.'));
+      return;
     }
+    else if (!preg_match('/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$/', $form_state['values']['mail'])) {
+      form_set_error('name', t('Your email address is not correct.'));
+      return;
+    } else {
       $mini_account['values'] = array_merge($mini_account['values'], $form_state['values']);
       // Try to register the employee.
       $form_state['step'] = MINI_USER_REGISTER_CONFIRM_FORM;
       $form_state['rebuild'] = TRUE;
       $form['#user'] = drupal_anonymous_user();
       user_register_submit($form, $mini_account);
+    }
+
      // mini_user_client()->register($user, $form_state['values']['media']);
   }
 }
@@ -266,6 +272,7 @@ function mini_user_register_form_validate($form, &$form_state) {
     // Only cache the form if no errors are encountered during validation.
     $form_state['cache'] = FALSE;
   }
+  $form_state['values']['administer_users'] = NULL;
   $form_state['mini_account'] = $form_state;
 }
 
@@ -353,4 +360,22 @@ function mini_user_register_cancel_form($form, &$form_state) {
   );
 
   return $form;
+}
+
+/**
+ * check mail regsited or no
+ */
+function check_mail_exsite ($user_mail, $user_id = NULL) {
+  $email = $user_mail;
+  if (!$user_id) {
+    $query = db_query("SELECT `name` FROM `users` WHERE `mail` = :mail" ,array(':mail' => $email));
+  } else {
+    $query = db_query("SELECT `name` FROM `users` WHERE `mail` = :mail AND `uid` != :uid" ,array(':mail' => $email, ':uid' => $user_id));
+  }
+  $result = $query->fetchObject();
+  if (isset($result->name)) {
+    return TRUE;
+  } else {
+    return FALSE;
+  }
 }

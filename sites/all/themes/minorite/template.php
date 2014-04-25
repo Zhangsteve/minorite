@@ -157,3 +157,16 @@ function mini_render_block($module, $delta) {
   $block = _block_render_blocks(array(block_load($module, $delta)));
   return _block_get_renderable_array($block);
 }
+
+/**
+ * Gets a block suitable for drupal_render().
+ *
+ * @param $blocks
+ *  An array of blocks to render.
+ *
+ * @return
+ *  A renderable array.
+ */
+function mini_render_blocks($blocks) {
+  return _block_get_renderable_array(_block_render_blocks($blocks));
+}

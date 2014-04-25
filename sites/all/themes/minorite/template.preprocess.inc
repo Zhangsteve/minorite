@@ -127,7 +127,35 @@ function minorite_preprocess_entity(&$variables) {
  */
 function minorite_preprocess_page(&$variables) {
   if ($variables['is_front']) {
+    $modules = array(
+        'mini_voyage',
+    );
+    $deltas = array(
+        'home',
+    );
+
+    $query = db_select('block', 'b');
+    $result = $query
+    ->fields('b')
+    ->condition('b.module', $modules)
+    ->condition('b.delta', $deltas)
+    ->condition('b.theme', 'minorite')
+    ->addTag('block_load')
+    ->addTag('translatable')
+    ->execute();
+    $block_info= $result->fetchAllAssoc('bid');
+
+    $blocks = array();
+    foreach ($block_info as $block) {
+      $blocks[$block->module . '_' . $block->delta] = $block;
+    }
+    $blocks = mini_render_blocks($blocks);
+
     $variables['carrousel'] = mini_render_block('mini_carrousel', 'carrousel'); // TODO: rename to carousel.
+    $variables['page']['content'] = array(
+        'home_voyage' => $blocks['mini_voyage_home'],
+        //'team' => $blocks['mini_article_team'],
+    );
   }
   // Add a new suggestion for the page theme with node type
   if (isset($variables['node'])) {

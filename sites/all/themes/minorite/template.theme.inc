@@ -473,7 +473,7 @@ function minorite_menu_tree__user_menu(array $variables) {
 
   if ($user->uid) {
     // TODO: add this as a menu link.
-    $text = t('Welcome !first_name', array('!first_name' => $user->firstName));
+    $text = t('Welcome !first_name', array('!first_name' => $user->name));
     $options .= '<option>' . l($text, 'user', array('html' => TRUE)) . '</option>';
   }
 

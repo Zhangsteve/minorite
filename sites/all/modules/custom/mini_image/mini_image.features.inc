@@ -117,7 +117,7 @@ function mini_image_image_default_styles() {
     'label' => 'Carousel (330xh)',
     'effects' => array(
       0 => array(
-        'label' => 'Scale',
+        'label' => 'Scale and crop',
         'help' => 'Scaling will maintain the aspect-ratio of the original image. If only a single dimension is specified, the other dimension will be calculated.',
         'effect callback' => 'image_scale_effect',
         'dimensions callback' => 'image_scale_dimensions',

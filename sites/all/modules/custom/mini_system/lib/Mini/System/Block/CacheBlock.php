@@ -62,13 +62,13 @@ class CacheBlock {
       // 'PER_MANAGEMENT' caches the block by management level. Further
       // granularity are added eventually such as theme key and language by the
       // drupal_render function.
-      if ($this->granularity & DRUPAL_CACHE_PER_MANAGEMENT) {
+      /*if ($this->granularity & DRUPAL_CACHE_PER_MANAGEMENT) {
         $cid_parts[] = 'm.' . $user->managementLevel;
       }
       // 'PER_NETWORK' caches the block by network access.
       if ($this->granularity & DRUPAL_CACHE_PER_NETWORK) {
         $cid_parts[] = 'n.' . $external;
-      }
+      }*/
       // 'PER_USER' can conflict with super admin.
       if ($user->uid == 1 && !($this->granularity & DRUPAL_CACHE_PER_USER)) {
         $cid_parts[] = 'u.1';

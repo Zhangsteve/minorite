@@ -152,12 +152,16 @@ function mini_user_form_user_profile_form_alter(&$form, &$form_state, $form_id) 
 function mini_user_form_user_profile_form_validate($form, &$form_state) {
   // Trim whitespace from mail, to prevent confusing 'e-mail not valid'
   // warnings often caused by cutting and pasting.
-
+  global $user;
+  module_load_include('inc', 'mini_user', 'mini_user.pages');
   if (!preg_match('/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$/', $form_state['input']['mail'])) {
     form_set_error('mail', t('Your email address not correct'));
     return;
-  }else{
-
+  }else if (check_mail_exsite($form_state['input']['mail'], $user->uid)){
+    form_set_error('mail', t('Your email is already existed'));
+    return;
+  } else {
+    $form_state['values']['mail'] = $form_state['input']['mail'];
   }
 
   if (!isset($form_state['values']['firstName'])){
@@ -186,20 +190,6 @@ function mini_user_form_user_profile_form_validate($form, &$form_state) {
     return;
   }
 
-  // Validate the e-mail address, and check if it is taken by an existing user.
-  /*if ($error = user_validate_mail($form_state['values']['mail'])) {
-  form_set_error('mail', $error);
-  }
-  else*/
-  if ((bool) db_select('users')->fields('users', array('uid'))->condition('uid', $form['#user']->uid, '<>')->condition('mail', db_like($form_state['values']['mail']), 'LIKE')->range(0, 1)->execute()->fetchField()) {
-    // Format error message dependent on whether the user is logged in or not.
-    if ($GLOBALS['user']->uid) {
-      form_set_error('mail', t('The e-mail address %email is already taken.', array('%email' => $form_state['values']['mail'])));
-    }
-    else {
-      form_set_error('mail', t('The e-mail address %email is already registered. <a href="@password">Have you forgotten your password?</a>', array('%email' => $form_state['values']['mail'], '@password' => url('user/password'))));
-    }
-  }
 
   entity_form_field_validate('user', $form, $form_state);
 
