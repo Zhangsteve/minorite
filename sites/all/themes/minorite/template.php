@@ -12,7 +12,7 @@ function minorite_theme($existing, $type, $theme, $path) {
   $templates = array();
 
   foreach (module_list() as $name) {
-    // Filters modules starting by disney to only register thoses templates.
+    // Filters modules starting by mini to only register thoses templates.
     if (substr($name, 0, 4) === 'mini') {
       $module_path = drupal_get_path('module', $name);
       $templates += drupal_find_theme_functions($existing, array($theme));
