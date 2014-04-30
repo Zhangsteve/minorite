@@ -1,0 +1,43 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function mini_quicklinks_schema() {
+  $schema['mini_quicklinks'] = array(
+    'description' => 'The quicklinks in my hub define per user',
+    'fields' => array(
+      'uid' => array(
+        'description' => 'The users.uid that owns this quicklinks.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'data' => array(
+        'description' => 'A serialized array containing information for the quicklinks; keys can include title and link.',
+        'type' => 'blob',
+        'not null' => FALSE,
+        'default' => NULL,
+      ),
+    ),
+    'foreign keys' => array(
+      'node_author' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+    ),
+    'primary key' => array('uid'),
+  );
+  return $schema;
+}
+
+/**
+ * Create table mini_quicklinks if not exist
+ */
+function mini_quicklinks_update_7000() {
+  $table = 'mini_quicklinks';
+  if (!db_table_exists($table)) {
+	  $schema = mini_quicklinks_schema();
+	  db_create_table($table, $schema[$table]);
+	 }
+}

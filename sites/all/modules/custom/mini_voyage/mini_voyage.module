@@ -1,0 +1,445 @@
+<?php
+use Mini\Voyage\VoyageFieldQuery;
+use Mini\Voyage\Block\HomeBlock;
+use Mini\Voyage\Block\AssociatedBlock;
+
+/**
+ * @file
+ * Code for the Voyage feature.
+ */
+
+include_once 'mini_voyage.features.inc';
+
+/**
+ * Implements hook_theme().
+ */
+function mini_voyage_theme($existing, $type, $theme, $path){
+  return array(
+    'block__mini_voyage__team' => array(
+      'template' => 'mini-voyage-team',
+      'path' => $path . '/templates',
+    ),
+    'home_voyage' => array(
+      'variables' => array('children' => NULL),
+      'template' => 'home-voyage',
+      'path' => $path . '/theme',
+    ),
+  );
+}
+/**
+ * Implements hook_block_info().
+ */
+function mini_voyage_block_info() {
+  $blocks = array();
+
+  require_once('lib/Mini/Voyage/Block/HomeBlock.php');
+  $tmp = new HomeBlock();
+  $blocks['home'] = $tmp->info();
+
+  require_once('lib/Mini/Voyage/Block/AssociatedBlock.php');
+  $tmp = new AssociatedBlock();
+  $blocks['associated'] = $tmp->info();
+
+  $blocks['team'] = array(
+      'info' => t('Team info'),
+      'cache' => DRUPAL_NO_CACHE,
+  );
+
+  return $blocks;
+}
+/**
+ * Implements hook_block_info_alter().
+ */
+function mini_voyage_block_info_alter(&$blocks, $theme, $code_blocks) {
+  if ($theme == 'minorite') {
+    // Enables associated Voyages block.
+    $blocks['mini_voyage']['associated']['status'] = 1;
+    $blocks['mini_voyage']['associated']['region'] = 'right';
+    $blocks['mini_voyage']['associated']['weight'] = 5;
+    $blocks['mini_voyage']['associated']['visibility'] = BLOCK_VISIBILITY_NOTLISTED;
+    $blocks['mini_voyage']['associated']['pages'] = '';
+  }
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function mini_voyage_block_view($delta = '') {
+  $block = array();
+
+  // The $delta parameter tells which block is requested.
+  switch ($delta) {
+    case 'associated':
+      // Default block title (can be overridden through administrative interface).
+      $block['subject'] = t('Associated Voyages');
+      $tmp = new AssociatedBlock();
+      $block['content'] = $tmp->view();
+      $block['classes'] = array('box-gradient', 'gradient-fix', 'linked-data-wrapper');
+      break;
+
+    case 'home':
+      // Default block title (can be overridden through administrative interface).
+      $block['subject'] = t('Voyage');
+      // The content of this block is generated for every users since profiled
+      // Voyages are not shown here. Voyages of every sections of 'headline'
+      // are rendered.
+      $tmp = new HomeBlock();
+      $block['content'] = $tmp->view();
+      $block['classes'] = array('box-wrapper', 'highlight-news-wrapper');
+      break;
+
+    case 'team':
+      // Default block title (can be overridden through administrative interface).
+      $block['subject'] = t('Team') . '<strong>' . t('news') . '</strong>';
+      // Displays the 'Team news' block content. If no content is created, just
+      // don't display the block.
+      $block['content'] = mini_voyage_block_team();
+      $block['classes'] = array('box-wrapper', 'team-news-wrapper');
+      break;
+  }
+  return $block;
+}
+
+/**
+ * Returns the list of Voyages to display on the home page.
+ */
+function mini_voyage_block_home($elements) {
+  $query = new VoyageFieldQuery();
+  // Configures the query.
+  $query->propertyCondition('promote', 1)
+        ->propertyOrderBy('sticky', 'DESC')
+        ->propertyOrderBy('created', 'DESC')
+        //->addSectionType('headlines')
+        ->range(0, '4');
+  // Executes the query.
+  $entities = $query->execute();
+  if (empty($entities)) {
+    // If there is no entities, displays a default message.
+    $default_message = '<p>' . t('No front page content has been created yet.') . '</p>';
+
+    $default_links = array();
+    if (node_access('create', 'Voyage')) {
+      $default_links[] = l(t('Add new content'), 'node/add/Voyage');
+    }
+    if (!empty($default_links)) {
+      $default_message .= theme('item_list', array('items' => $default_links));
+    }
+
+    $elements['#markup'] = $default_message;
+  }
+  else {
+    $nodes = node_load_multiple(array_keys($entities['node']));
+    $elements['nodes'] = node_view_multiple($nodes, 'teaser');
+  }
+
+  $elements['more'] = array(
+    '#theme' => 'more_link',
+    '#title' => t('See all voyages'),
+    '#url' => 'voyage/all',
+  );
+
+  return $elements;
+}
+
+/**
+ * Returns the list of Voyages associated with the current Voyage.
+ */
+function mini_voyage_block_associated($elements) {
+  // Get the current node object.
+  $tids = array();
+  $node = menu_get_object();
+  // Tags may be optional for an Voyage.
+  $tags = field_get_items('node', $node, 'tags');
+  foreach (($tags ? $tags : array()) as $term) {
+    $tids[] = $term['tid'];
+  }
+
+  $query = db_select('node', 'n');
+  // Query the 4 last Voyages in relation with terms ID of the current node
+  // and order them by timestamp. We join the taxonomy_index table to avoid
+  // retrieving Voyages which are not bound to a tag.
+  $query->fields('n', array('nid', 'title'))
+        ->condition('n.type', 'Voyage')
+        ->condition('n.status', 1)
+        ->condition('n.nid', $node->nid, '<>')
+        ->orderBy('n.created')
+        ->range(0, 4);
+
+  $query->join('taxonomy_index', 'ti', '%alias.nid = n.nid');
+  if (!empty($tids)) {
+    // Restrict the join condition on term IDs owned by the page's node.
+    $query->condition('ti.tid', $tids);
+  }
+  $result = $query->execute()->fetchAllKeyed();
+  $nodes = node_load_multiple(array_keys($result));
+
+  $tids = array();
+  foreach ($nodes as $node) {
+    $tmp = field_get_items('node', $node, 'field_voyage_tags');
+    $tids[] = $tmp[0]['tid'];
+  }
+  $terms = taxonomy_term_load_multiple($tids);
+  $terms = i18n_taxonomy_localize_terms($terms);
+
+  $items = array();
+  foreach($nodes as $node) {
+    $tmp = field_get_items('node', $node, 'field_voyage_tags');
+    $tid = $tmp[0]['tid'];
+    // Outputs the topic of the node.
+    $output = '<b class="metadata-tag">' . $terms[$tid]->name . '</b>';
+    // Outputs the title as a link to node.
+    $output .= '<h3>' . l($node->title, 'node/' . $node->nid, array('html' => TRUE)) . '</h3>';
+    // Created time of the Voyage
+    $output .= '<time class="metadata-publication-date time" datetime="' . format_date($node->created, 'custom', 'Y-m-d') . '">' . format_date($node->created, 'short') . '</time>';
+
+    $items[] = $output;
+  }
+
+  $elements['nodes'] = array(
+    '#type' => 'ul',
+    '#items' => $items,
+    '#theme' => 'item_list',
+    '#attributes' => array('class' => array('nav')),
+  );
+
+  return $elements;
+}
+
+/**
+ * Returns a list of News (Voyage).
+ * Arguments to limit the list of Voyage by custom tag or by workbench section id :
+ * - tag = add a tag to create custom function
+ * - section = add the mlid (string or array)
+ */
+function mini_voyage_news($tag = FALSE, $section = FALSE) {
+  $query = new VoyageFieldQuery();
+
+  // Add tag to the query if present
+  if ($tag) {
+    $query->addTag($tag);
+  }
+  // Add section to the query if present
+  if ($section) {
+    $query->addSection($section);
+  }
+  // Order the Voyage by create date and limit the result to 4 Voyages
+  $query->propertyOrderBy('sticky', 'DESC')
+        ->propertyOrderBy('created', 'DESC')
+        ->range(0, 4);
+
+  $entities = $query->execute();
+
+  if (empty($entities)) {
+    // If there is no entities, displays a default message.
+    $default_links = array();
+    $default_links[] = t('No news content has been created yet.');
+    if (_node_add_access()) {
+      $default_links[] = l(t('Add new content'), 'node/add/Voyage');
+    }
+    $build['content'] = array(
+      '#markup' => theme('item_list', array('items' => $default_links, 'attributes' => array('class' => array('nav')))),
+    );
+  } else {
+    $nodes = node_load_multiple(array_keys($entities['node']));
+    $build['content'] = node_view_multiple($nodes, 'team');
+  }
+
+  // Add a default different wrapper for HTML4/HTML5
+  $build['content']['#theme_wrappers'] = array('home_news', 'section');
+  $build['content']['#section_attributes'] = array(
+    'class' => array('block', 'box-wrapper', 'dsnews-news-wrapper')
+  );
+  return $build;
+}
+
+/**
+ * Returns a list of Team Info (Voyage).
+ */
+function mini_voyage_block_team() {
+  $query = new VoyageFieldQuery();
+  $query->propertyCondition('promote', 1)
+        ->propertyOrderBy('sticky', 'DESC')
+        ->propertyOrderBy('created', 'DESC')
+        ->range(0, 4);
+
+  $entities = $query->addSectionType('my-team')->execute();
+
+  if (empty($entities)) {
+    // If there is no entities, displays a default message.
+    $default_message = '<p>' . t('No team content has been created yet.') . '</p>';
+
+    $default_links = array();
+    if (node_access('create', 'benefit')) {
+      $default_links[] = l(t('Add new content'), 'node/add/Voyage');
+    }
+    if (!empty($default_links)) {
+      $default_message .= theme('item_list', array('items' => $default_links));
+    }
+
+    $build['content'] = array(
+      '#markup' => $default_message,
+    );
+  }
+  else {
+    $nodes = node_load_multiple(array_keys($entities['node']));
+    $build = node_view_multiple($nodes, 'team');
+  }
+
+  return $build;
+}
+
+/**
+ * Implements hook_query_TAG_alter().
+ *
+ * Join table.
+ */
+function mini_voyage_query_outside_idea_alter(QueryAlterableInterface $query) {
+  $tables = $query->getTables();
+  $nalias = $tables['node']['alias'];
+
+  $tid = mini_voyage_outside_idea_tid();
+  $node_condition = db_and();
+  $node_condition ->condition('topic_tid', $tid);
+  $node_condition ->condition('entity_type', 'node');
+
+  $subquery = db_select('field_revision_topic', 'frt');
+  $subquery->condition($node_condition)
+           ->fields('frt', array('entity_id'))
+           ->where("$nalias.nid = frt.entity_id");
+
+  $query->exists($subquery);
+}
+
+/**
+ * Return the tid for the taxonomy term 'Team News'
+ */
+function mini_voyage_outside_idea_tid() { // TODO: dump this in the container.
+  //Get vid of type Voyage.
+  $taxonomy = taxonomy_vocabulary_get_names();
+  $Voyage_vid = $taxonomy['Voyage']->vid;
+
+  // Configure the query
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'taxonomy_term')
+        ->propertyCondition('vid', $Voyage_vid)
+        ->propertyCondition('name', 'Outside ideas');
+  $entities_taxonomy = $query->execute();
+
+  // Get only keys from $entities; which correspond to 'tid' terms.
+  $keys = array_keys($entities_taxonomy['taxonomy_term']);
+
+  // Get the first key which is the 'Team News' tid.
+  $tid = array_shift($keys);
+
+  return $tid;
+}
+
+/**
+ * Implements hook_node_view().
+ *
+ * Adds meta-data pseudo fields to the node type advertisement to ease the use
+ * in templates files.
+ */
+function mini_voyage_node_view($node, $view_mode, $langcode) {
+  if ($node->type == 'voyage') {
+    // Adds the 'created' property as date field for templates processing.
+    $node->content['metadata'] = array(
+        '#theme_wrappers' => array('metadata_wrapper'),
+    );
+    $node->content['metadata']['publication'] = array(
+      '#theme' => 'metadata_formatter__time',
+      '#item' => array('#markup' => format_date($node->created, 'short')),
+      '#attributes' => array(
+        'class' => array('metadata-publication-date'),
+        'datetime' => format_date($node->created, 'custom', 'Y-m-d'),
+      ),
+    );
+
+    switch ($view_mode) {
+      case 'full':
+        $node->content['field_voyage_tags']['#attributes']['class'] = array('metadata-list-wrapper');
+        foreach (element_children($node->content['field_voyage_tags']) as $delta) {
+          if ($delta > 0) {
+            // Adds a prepending whitespace character to respect the HTML.
+            $node->content['field_voyage_tags'][$delta]['#prefix'] = ' ';
+          }
+        }
+        // Continue the switch to add date metadata.
+      case 'menu':
+      case 'team':
+      case 'list':
+      case 'teaser':
+        // Prepends the 'metadata' field with classification (topic) data so it
+        // gets inlined.
+        if ($view_mode != 'full') {
+          // In thoses view modes, forces the first image to be on the left.
+          $node->content['field_vignette'][0]['#item']['position'] = 'left';
+        }
+        break;
+    }
+  }
+}
+
+/**
+ * Implements hook_node_cache_invalidate().
+ */
+function mini_voyage_node_cache_invalidate($node) {
+  if ($node->type == 'Voyage') {
+    $blocks = array();
+
+    if (!empty($node->tags)) {
+      $blocks[] = new AssociatedBlock();
+    }
+
+    if ($node->promote == 1) {
+      $blocks[] = new HomeBlock();
+    }
+
+    return $blocks;
+  }
+}
+
+/**
+ * hook_views_pre_view
+ */
+function mini_voyage_views_pre_render(&$view) {
+   foreach ($view->result as $result) {
+      $result->field_field_vignette[0]['rendered']['#item']['position'] = 'left';
+   }
+}
+/**
+ * hook form alter on the views exposed form on the search page, to customize
+ */
+function mini_voyage_form_views_exposed_form_alter(&$form, &$form_state) {
+  if ($form['#id'] == 'views-exposed-form-voyage-page') {
+    $form['items_per_page']['#type'] = 'hidden';
+    if (isset($form_state['input']['items_per_page'])) {
+      $form['items_per_page']['#value'] = $form_state['input']['items_per_page'];
+    }
+
+    // Filtrer
+    $form['reset']['#attributes']['class']  = array('button-ico-eraser');
+    $form['submit']['#attributes']['class'] = array('button-ico-magnifier');
+  }
+}
+
+/**
+ * Define a dummy form with "Items per page" form item.
+ *
+ * It will only be used to fill in the corresponding form item (hidden) of Views exposed form
+ */
+function mini_voyage_items_per_page() {
+  $pager_options = array(
+      10 => t('!n results per page', array('!n' => 10)),
+      15 => t('!n results per page', array('!n' => 15)),
+      20 => t('!n results per page', array('!n' => 20)),
+  );
+  $form['items_per_page'] = array(
+      '#type' => 'select',
+      '#options' => $pager_options,
+      '#default_value' => empty($_GET['items_per_page']) ? 10 : $_GET['items_per_page'],
+      '#title' => t('Minorite'),
+      '#attributes' => array('onchange' => 'jQuery("input[name=\"items_per_page\"]").val(jQuery("#edit-items-per-page").val()); jQuery("#edit-submit-voyage").click();'),
+  );
+  return $form;
+}

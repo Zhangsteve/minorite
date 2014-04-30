@@ -1,0 +1,113 @@
+<?php
+/**
+ * @file
+ */
+
+/**
+ * Implements hook_block_info().
+ */
+function mini_video_block_info() {
+  $blocks['video_moment'] = array(
+    'info' => t('Video of the moment'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_configure().
+ */
+function mini_video_block_configure($delta = '') {
+  // Form element video.
+  $form['title'] = array(
+    '#access' => FALSE,
+    '#description' => '',
+    '#type' => 'textfield',
+    '#value' => '',
+  );
+  $form['video'] = array(
+    '#description' => '',
+    '#title' => t('Video of the moment'),
+    '#type' => 'fieldset',
+    '#weight' => 1,
+  );
+  $form['video']['upload'] = array(
+    '#default_value' => array('fid'=> variable_get('mini_video_fid', NULL)),
+    '#description' => '',
+    '#title' => t('Select a media video'),
+    '#type' => 'media',
+  );
+  $form['video']['title_video'] = array(
+    '#description' => '',
+    '#title' => t('Title'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('mini_video_title', NULL),
+  );
+  $form['video']['link_video'] = array(
+    '#description' => t('Example').' : "http://youtu.be/tLplrEry5q0" <br/> or "http://www.youtube.com/watch?v=tLplrEry5q0"',
+    '#title' => t('Link to video page'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('mini_video_link', NULL),
+  );
+  return $form;
+}
+
+/**
+ * Implements hook_block_save().
+ */
+function mini_video_block_save($delta = '', $edit = array()) {
+  // Stores the fid of the video in a variable.
+  variable_set('mini_video_fid', $edit['fid']);
+  // Stores the title enter by user in a variable.
+  variable_set('mini_video_title', $edit['title_video']);
+  // Stores the link enter by user in a variable.
+  variable_set('mini_video_link', $edit['link_video']);
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function mini_video_block_view($delta = '') {
+  $block = array();
+
+  $fid = variable_get('mini_video_fid', NULL);
+  $markup = '';
+  if ($fid) {
+    $video = file_load($fid);
+
+    $preview = file_view($video);
+    //Define options media video
+    $preview['file']['#options']['width'] = 560;
+    $preview['file']['#options']['height'] = 315;
+    $preview['file']['#options']['attributes']['class'] = 'video-container';
+    $markup = drupal_render($preview);
+  } else {
+    return false;
+  }
+
+  return array(
+    'content' => array(
+      '#theme' => 'mini_video_wrapper',
+      '#markup' => $markup,
+      '#link' => variable_get('mini_video_link', NULL),
+      '#title_video' => variable_get('mini_video_title', NULL),
+      '#theme_wrappers' => array('section'),
+      '#section_attributes' => array(
+        'class' => array('box-wrapper', 'vid-player-wrapper')
+      ),
+    )
+  );
+}
+
+/**
+ * Implements hook_theme().
+ */
+function mini_video_theme($existing, $type, $theme, $path){
+  return array(
+    'mini_video_wrapper' => array(
+      'path' => $path . '/theme',
+      'template' => 'mini-video-wrapper',
+      'variables' => array('markup' => NULL, 'link' => NULL, 'title_video' => NULL),
+    ),
+  );
+}

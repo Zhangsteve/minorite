@@ -113,29 +113,29 @@ function minorite_js_alter(&$javascript) {
   $minorite = drupal_get_path('theme', 'minorite');
 
   // Change the group of draggable to be load after the jquery.ui.core.js and this correct the js error
-  if (isset($javascript['sites/all/modules/contrib_mod/jquery_update/replace/ui/ui/minified/jquery.ui.draggable.min.js'])) {
-    $javascript['sites/all/modules/contrib_mod/jquery_update/replace/ui/ui/minified/jquery.ui.draggable.min.js']['group'] = '0';
+  if (isset($javascript['sites/all/modules/contrib/jquery_update/replace/ui/ui/minified/jquery.ui.draggable.min.js'])) {
+    $javascript['sites/all/modules/contrib/jquery_update/replace/ui/ui/minified/jquery.ui.draggable.min.js']['group'] = '0';
   }
 
-  if (isset($javascript[$minorite . '/helper.js'])) {
-    $javascript[$minorite . '/helper.js']['scope'] = 'footer';
+  if (isset($javascript[$minorite . '/js/helper.js'])) {
+    $javascript[$minorite . '/js/helper.js']['scope'] = 'footer';
   }
-  if (isset($javascript[$minorite . '/script.js'])) {
-    $javascript[$minorite . '/script.js']['scope'] = 'footer';
+  if (isset($javascript[$minorite . '/js/script.js'])) {
+    $javascript[$minorite . '/js/script.js']['scope'] = 'footer';
   }
-  if (isset($javascript[$minorite . '/syze.min.js'])) {
+  if (isset($javascript[$minorite . '/js/syze.min.js'])) {
     $javascript[$minorite . '/js/syze.min.js']['scope'] = 'footer';
   }
-  if (isset($javascript[$minorite . '/jquery.bxslider.min.js'])) {
+  if (isset($javascript[$minorite . '/js/jquery.bxslider.min.js'])) {
     $javascript[$minorite . '/js/jquery.bxslider.min.js']['scope'] = 'footer';
   }
-  if (isset($javascript[$minorite . '/jquery.icheck.min.js'])) {
+  if (isset($javascript[$minorite . '/js/jquery.icheck.min.js'])) {
     $javascript[$minorite . '/js/jquery.icheck.min.js']['scope'] = 'footer';
   }
-  if (isset($javascript[$minorite . '/jquery.fancybox-1.3.4.pack.js'])) {
+  if (isset($javascript[$minorite . '/js/jquery.fancybox-1.3.4.pack.js'])) {
     $javascript[$minorite . '/js/jquery.fancybox-1.3.4.pack.js']['scope'] = 'footer';
   }
-  if (isset($javascript[$minorite . '/jquery.nicescroll.min.js'])) {
+  if (isset($javascript[$minorite . '/js/jquery.nicescroll.min.js'])) {
     $javascript[$minorite . '/js/jquery.nicescroll.min.js']['scope'] = 'footer';
   }
 }

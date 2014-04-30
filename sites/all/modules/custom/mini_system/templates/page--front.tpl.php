@@ -113,8 +113,7 @@
         <div class="w-2">
           <?php print render($page['left']); ?>
         </div>
-
-        <?php print render($page['right']); ?>
+          <?php print render($page['right']); ?>
       </div>
     </div> <!-- /#content -->
 

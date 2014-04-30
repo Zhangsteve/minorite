@@ -1,0 +1,5 @@
+name = Quicklinks
+description = Manage quicklinks block.
+core = 7.x
+package = minorite groupe
+version = 7.x-1.0

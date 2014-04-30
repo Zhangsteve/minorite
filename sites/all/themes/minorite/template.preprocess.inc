@@ -127,35 +127,50 @@ function minorite_preprocess_entity(&$variables) {
  */
 function minorite_preprocess_page(&$variables) {
   if ($variables['is_front']) {
-    $modules = array(
-        'mini_voyage',
-    );
-    $deltas = array(
-        'home',
-    );
+      $modules = array(
+          'mini_voyage',
+      );
+      $deltas = array(
+          'home',
+      );
 
-    $query = db_select('block', 'b');
-    $result = $query
-    ->fields('b')
-    ->condition('b.module', $modules)
-    ->condition('b.delta', $deltas)
-    ->condition('b.theme', 'minorite')
-    ->addTag('block_load')
-    ->addTag('translatable')
-    ->execute();
-    $block_info= $result->fetchAllAssoc('bid');
+      $query = db_select('block', 'b');
+      $result = $query
+      ->fields('b')
+      ->condition('b.module', $modules)
+      ->condition('b.delta', $deltas)
+      ->condition('b.theme', 'minorite')
+      ->addTag('block_load')
+      ->addTag('translatable')
+      ->execute();
+      $block_info= $result->fetchAllAssoc('bid');
 
-    $blocks = array();
-    foreach ($block_info as $block) {
-      $blocks[$block->module . '_' . $block->delta] = $block;
-    }
-    $blocks = mini_render_blocks($blocks);
+      $blocks = array();
+      foreach ($block_info as $block) {
+        $blocks[$block->module . '_' . $block->delta] = $block;
+      }
+      $blocks = mini_render_blocks($blocks);
 
-    $variables['carrousel'] = mini_render_block('mini_carrousel', 'carrousel'); // TODO: rename to carousel.
-    $variables['page']['content'] = array(
-        'home_voyage' => $blocks['mini_voyage_home'],
-        //'team' => $blocks['mini_article_team'],
-    );
+      $variables['carrousel'] = mini_render_block('mini_carrousel', 'carrousel'); // TODO: rename to carousel.
+      $variables['page']['content'] = array(
+          'home_voyage' => $blocks['mini_voyage_home'],
+          //'team' => $blocks['mini_article_team'],
+      );
+      //left
+      $region_left = array(
+          'video' => mini_render_block('mini_video', 'video_moment'),
+      );
+      // Merge the left region with the front page blocks.
+      $variables['page']['left'] = array_merge($variables['page']['left'], $region_left);
+     //end left
+     //right
+      $region_right = array(
+        //'quicklinks' => mini_render_block('mini_quicklinks', 'quicklinks_homepage'),
+      );
+    // Merge the right region with the front page blocks.
+    $variables['page']['right'] = array_merge($variables['page']['right'], $region_right);
+
+     //end right
   }
   // Add a new suggestion for the page theme with node type
   if (isset($variables['node'])) {
@@ -164,6 +179,11 @@ function minorite_preprocess_page(&$variables) {
       $variables['theme_hook_suggestions'][] = 'page__node__newsletter';
     } else {
       $variables['theme_hook_suggestions'][] = 'page__node__' . $variables['node']->type;
+    }
+
+    if ($variables['node']->type == 'voyage') {
+      drupal_add_js(path_to_theme().'/js/imagelinghtbox.min.js');
+      $variables['scripts'] = drupal_get_js();
     }
   }
   if (isset($variables['node']) && arg(2) == 'edit') {

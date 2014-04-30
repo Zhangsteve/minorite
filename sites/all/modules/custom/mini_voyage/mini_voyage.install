@@ -1,0 +1,97 @@
+<?php
+
+/**
+ * @file
+ * Installation functions for Voyage feature.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function mini_voyage_install() {
+  $vocabulary = 'voyage';
+  $vocabularies = taxonomy_vocabulary_get_names();
+
+  if (empty($vocabularies[$vocabulary])) {
+    require_once 'mini_voyage.features.taxonomy.inc';
+    $vocabularies = mini_voyage_taxonomy_default_vocabularies();
+    taxonomy_vocabulary_save((object) $vocabularies[$vocabulary]);
+    $vocabularies = taxonomy_vocabulary_get_names();
+  }
+
+  foreach (mini_voyage_vocabulary() as $name) {
+    $term = new stdClass();
+    $term->name = $name;
+    $term->vid = $vocabularies[$vocabulary]->vid;
+    $term->vocabulary_machine_name = $vocabulary;
+    taxonomy_term_save($term);
+  }
+
+  // Limit the block associated voyage on the voyage content type
+  db_insert('block_node_type')
+    ->fields(array(
+      'module' => 'mini_voyage',
+      'delta' => 'associated',
+      'type' => 'voyage',
+    ))
+    ->execute();
+}
+
+/**
+ * Returns 'voyage' vocabulary.
+ */
+function mini_voyage_vocabulary() {
+  return array(
+    'france',
+    'europe',
+  );
+}
+
+/**
+ * Returns chinese translations of 'voyage' vocabulary.
+ */
+function mini_voyage_vocabulary_cn() {
+  return array(
+    'france' => '法国',
+    'europe' => '欧洲',
+  );
+}
+
+/**
+ * Limit the block associated article on the voyage content type
+ */
+function mini_voyage_update_7000() {
+  db_insert('block_node_type')
+    ->fields(array(
+      'module' => 'mini_voyage',
+      'delta' => 'associated',
+      'type' => 'voyage',
+    ))
+    ->execute();
+}
+
+/**
+ * Re-set 'voyage' taxonomy.
+ */
+function mini_voyage_update_7001() {
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'taxonomy_term')
+        ->entityCondition('bundle', 'voyage');
+
+  $entities = $query->execute();
+
+  if (isset($entities['taxonomy_term'])) {
+    foreach (array_keys($entities['taxonomy_term']) as $tid) {
+      taxonomy_term_delete($tid);
+    }
+  }
+
+  $vocabulary = taxonomy_vocabulary_machine_name_load('voyage');
+  foreach (mini_voyage_vocabulary() as $name) {
+    $term = new stdClass();
+    $term->name = $name;
+    $term->vid = $vocabulary->vid;
+    $term->vocabulary_machine_name = $vocabulary->name;
+    taxonomy_term_save($term);
+  }
+}

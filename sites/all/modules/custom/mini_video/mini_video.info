@@ -1,0 +1,8 @@
+name = Video Of The Moment
+description = Video of the moment block.
+core = 7.x
+package = minorite groupe
+version = 7.x-1.0
+
+dependencies[] = media
+dependencies[] = media_youtube

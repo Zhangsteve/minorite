@@ -1,0 +1,257 @@
+<?php
+
+// Max number of quicklinks available (use for the form)
+define('MAX_QUICKLINKS_NUMBER', 15);
+
+/**
+ * Implements hook_block_info().
+ */
+function mini_quicklinks_block_info() {
+  $blocks['quicklinks'] = array(
+    'info' => t('Quick links - Personal'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+
+  $blocks['quicklinks_homepage'] = array(
+    'info' => t('Quick links - Homepage'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function mini_quicklinks_menu() {
+  $items = array();
+
+  $items['custom/edit/block/mini_quicklinks'] = array(
+    'title' => t('Edit Quicklinks'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mini_quicklinks_edit_block'),
+    'access callback' => TRUE,
+  );
+
+  return $items;
+}
+
+/**
+ * Create a custom edit block Quicklinks
+ */
+function mini_quicklinks_edit_block($form, &$form_state) {
+  // Get the data of the user quicklinks
+  $data = mini_quicklinks_load();
+  for ($i = 0; $i < MAX_QUICKLINKS_NUMBER; $i++) {
+    $form['link' . $i] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Quicklinks ' . ($i + 1)),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+    );
+    $form['link' . $i]['link_title' . $i] = array(
+      '#type' => 'textfield',
+      '#default_value' => (isset($data[$i]['title']) ? $data[$i]['title'] : ''),
+      '#attributes' => array('placeholder' => t('Title')),
+    );
+    $form['link' . $i]['link_link' . $i] = array(
+      '#type' => 'textfield',
+      '#default_value' => (isset($data[$i]['link']) ? $data[$i]['link'] : ''),
+      '#attributes' => array('placeholder' => t('Link (http://)')),
+    );
+  }
+  $form['save'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+  return $form;
+}
+
+/**
+ * Submit of the custom edit block form for QuickLinks
+ */
+function mini_quicklinks_edit_block_submit(&$form, &$form_state) {
+  // Save the custom edit block configuration
+  mini_quicklinks_save($form_state['input']);
+  // Redirect to my-hub
+  $form_state['redirect'] = '/';
+}
+
+function mini_quicklinks_contextual_links_view_alter(&$element, &$items) {
+  // This hook is called for EVERY set of contextual links
+  // on a page.  We first want to check the $element to make
+  // sure we are adding a link to the correct list of contextual
+  // links. In this case we only want to add a link to blocks
+  // created by the "search" module. We just add links using the
+  // same array structure as is used by theme_links.
+  if (isset($element['#element']['#block']) && $element['#element']['#block']->delta == "quicklinks") {
+    $element['#links']['edit-quicklinks'] = array(
+      'title' => 'Edit Quicklinks',
+      'href' => url('custom/edit/block/mini_quicklinks', array('absolute' => TRUE)),
+    );
+  }
+}
+
+/**
+ * Load the quicklinks of the current user
+ */
+function mini_quicklinks_load() {
+  global $user;
+
+  if ($user->uid) {
+    $query = db_select('mini_quicklinks', 'dql')
+    ->fields('dql', array('data'))
+    ->condition('uid', $user->uid)
+    ->execute()->fetch();
+    // Test si les données existent
+    if (isset($query->data)) {
+      return unserialize($query->data);
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Save the quicklinks of the current user
+ */
+function mini_quicklinks_save($values) {
+  global $user;
+
+  $data = array();
+  for ($i = 0; $i < MAX_QUICKLINKS_NUMBER; $i++) {
+    $data[$i]['title'] = $values['link_title' . $i];
+    $data[$i]['link'] = $values['link_link' . $i];
+  }
+  if ($user->uid) {
+    db_merge('mini_quicklinks')
+    ->key(array('uid' => $user->uid))
+    ->fields(array(
+      'uid' => $user->uid,
+      'data' => serialize($data))
+    )
+    ->execute();
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Implements hook_block_configure().
+ */
+function mini_quicklinks_block_configure($delta = '') {
+  $form = array();
+
+  switch ($delta) {
+    case 'quicklinks_homepage':
+      $form['title'] = array(
+        '#access' => FALSE,
+        '#description' => '',
+        '#type' => 'textfield',
+        '#value' => '',
+      );
+      $data = unserialize(variable_get('mini_quicklinks_homepage', ''));
+      for ($i = 0; $i < MAX_QUICKLINKS_NUMBER; $i++) {
+        $form['link' . $i] = array(
+          '#type' => 'fieldset',
+          '#title' => t('Quicklinks ' . ($i + 1)),
+          '#collapsible' => TRUE,
+          '#collapsed' => FALSE,
+        );
+        $form['link' . $i]['link_title' . $i] = array(
+          '#type' => 'textfield',
+          '#default_value' => (isset($data[$i]['title']) ? $data[$i]['title'] : ''),
+          '#attributes' => array('placeholder' => t('Title')),
+        );
+        $form['link' . $i]['link_link' . $i] = array(
+          '#type' => 'textfield',
+          '#default_value' => (isset($data[$i]['link']) ? $data[$i]['link'] : ''),
+          '#attributes' => array('placeholder' => t('Link (http://)')),
+        );
+      }
+      break;
+  }
+  return $form;
+}
+
+/**
+ * Implements hook_block_save().
+ */
+function mini_quicklinks_block_save($delta = '', $edit = array()) {
+  // The $delta parameter tells which block is requested.
+  switch ($delta) {
+    case 'quicklinks_homepage':
+      // Store the value of the homepage quicklinks list.
+      $data = array();
+      for ($i = 0; $i < MAX_QUICKLINKS_NUMBER; $i++) {
+        $data[$i]['title'] = $edit['link_title' . $i];
+        $data[$i]['link'] = $edit['link_link' . $i];
+      }
+      variable_set('mini_quicklinks_homepage', serialize($data));
+      break;
+  }
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function mini_quicklinks_block_view($delta = '') {
+  $block = array();
+
+  switch ($delta) {
+    case 'quicklinks':
+      $quicklinks = mini_quicklinks_load();
+      break;
+
+    case 'quicklinks_homepage':
+      $quicklinks = unserialize(variable_get('mini_quicklinks_homepage', ''));
+      break;
+  }
+  // Same render for both block so we mutualize
+  $render_li = '';
+  if ($quicklinks) {
+    foreach($quicklinks as $link) {
+      if (!empty($link['link'])) {
+        $render_li .= '<li><a href="' . $link['link'] . '">' . $link['title'] . '</a></li>';
+      }
+    }
+  }
+
+  //If there aren't any links
+  if ($render_li === '') {
+    $render_li = '<li>'.t('There are no quicklinks').'</li>';
+  }
+  $block['content']['#subject'] = t('Quick links');
+  $block['content']['#markup'] = $render_li;
+  $block['content']['#theme_wrappers'] = array('quicklinks_wrapper', 'section');
+  $block['content']['#section_attributes'] = array(
+    'class' => array('box-wrapper', 'quickaccess-wrapper')
+  );
+  return $block;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function mini_quicklinks_theme($existing, $type, $theme, $path) {
+  return array(
+    'quicklinks_wrapper' => array(
+      'render element' => 'element',
+      'template' => 'quicklinks-wrapper',
+      'path' => $path . '/theme',
+    ),
+  );
+}
+
+/**
+ * Implements hook_block_info_alter().
+ */
+function mini_quicklinks_block_info_alter(&$blocks, $theme, $code_blocks) {
+  if ($theme == 'minorite') {
+    // Enables associated Voyages block.
+    $blocks['mini_quicklinks']['quicklinks_homepage']['status'] = 1;
+    $blocks['mini_quicklinks']['quicklinks_homepage']['region'] = 'right';
+    $blocks['mini_quicklinks']['quicklinks_homepage']['weight'] = 2;
+    $blocks['mini_quicklinks']['quicklinks_homepage']['visibility'] = BLOCK_VISIBILITY_NOTLISTED;
+    $blocks['mini_quicklinks']['quicklinks_homepage']['pages'] = '';
+  }
+}
