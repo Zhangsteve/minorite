@@ -86,7 +86,7 @@
     <?php print render($content['image']); ?>
     <div class="float-reflow">
       <h2><a href="<?php print $node_url; ?>"><?php print render($content['title_field']); ?></a></h2>
-      <?php print render($content['metadata']); ?>
+      <?php print render($content['metatags']); ?>
       <?php print render($content['body']); ?>
     </div>
   </article>

@@ -32,7 +32,6 @@
 <div class="float-reflow">
   <h3><?php echo (isset($fields['title']->content) ? $fields['title']->content : ''); ?></h3>
   <?php echo $fields['created']->content; ?>
-  <?php echo $fields['field_voyage_tags']->content; ?>
   <?php echo (isset($fields['body']->content) ? $fields['body']->content : ''); ?>
   </div>
 </article>

@@ -475,7 +475,7 @@ BLOCKS
 /*highlight news -> goldish*/
 .highlight-news-wrapper {padding:21px 11px 0 0;} /*bottom margin see: .box-wrapper*/
 .highlight-news-wrapper .news-wrapper-body {background-color:#fff !important;}
-.highlight-news-wrapper a {color:#443F3F;}
+.highlight-news-wrapper a {color:#AC8242;}
 .highlight-news-wrapper h2 {font-family:Tahoma, Geneva, sans-serif; font-size:2.167em/*26*/; color:#AC8242;}
 .highlight-news-wrapper .news-wrapper-body .article-wrapper {margin:0; padding:21px 0; border-bottom:dotted 1px #bbb;}
 .highlight-news-wrapper .news-wrapper-body .article-wrapper h3 {font-family:Tahoma, Geneva, sans-serif; font-weight:normal; font-size:1.833em/*22 - 2.167em 26*/; color:#443F3F; margin:0 0 9px 0; line-height:105%;}

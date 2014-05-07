@@ -78,7 +78,6 @@
  * @see template_process()
  */
 ?>
-<?php //var_dump('');die();?>
 <article class="article-wrapper">
   <?php print render($content['metadata']); ?>
 

@@ -83,9 +83,6 @@
 <?php $content['body']['#items'][0]['value'] = preg_replace("/<img[^>]+\>/i", " ", $content['body']['#items'][0]['value']);?>
 <?php $content['body'][0]['#markup'] = preg_replace("/<img[^>]+\>/i", " ", $content['body']['0']['#markup']); ?>
   <?php print render($content['field_vignette']); ?>
-  <p class="metadata-wrapper">
-  <b class="metadata-topic"><?php print render($content['field_voyage_tags']); ?></b>
-  </p>
   <div class="float-reflow">
     <h3><a href="<?php print $node_url; ?>"><?php print render($content['title_field']); ?></a></h3>
     <?php print render($content['metadata']); ?>

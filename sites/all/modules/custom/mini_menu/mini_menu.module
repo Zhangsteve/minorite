@@ -212,8 +212,30 @@ function mini_menu_block_primary($elements = array()) {
  * Return secondary menu items
  */
 function mini_menu_block_secondary() {
+  $content = array();
+  $trail = menu_get_active_trail();
+  $names = menu_get_menus(FALSE);
+  if (($menu = end($trail)) && isset($menu['menu_name'])) {
+    if (!array_key_exists($menu['menu_name'], $names)) {
+      // Special case if a node has a workbench access but not in a front menu
+    }
+    // Checks the menu is not a system menu in which case it could render a
+    // non supported markup. A case can be the system provided 'navigation'
+    // menu for instance.
+    if (array_key_exists($menu['menu_name'], $names)) {
+      // TODO: do not use this function. What about block cache here ??
+      $content = mini_render_block('menu', $menu['menu_name']);
+      $content = reset($content);
+      $content['#theme_wrappers'] = array('menu_tree__secondary');
+      $content['#block']->subject =  check_plain($names[$menu['menu_name']]);
+    }
+  }
 
+  if (isset($current_path)) {
+    menu_set_active_item($current_path['href']);
+  }
 
+  return $content;
 }
 /**
  * Returns the footer navigation menu block.

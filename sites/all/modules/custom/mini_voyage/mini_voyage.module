@@ -289,58 +289,13 @@ function mini_voyage_block_team() {
 }
 
 /**
- * Implements hook_query_TAG_alter().
- *
- * Join table.
- */
-function mini_voyage_query_outside_idea_alter(QueryAlterableInterface $query) {
-  $tables = $query->getTables();
-  $nalias = $tables['node']['alias'];
-
-  $tid = mini_voyage_outside_idea_tid();
-  $node_condition = db_and();
-  $node_condition ->condition('topic_tid', $tid);
-  $node_condition ->condition('entity_type', 'node');
-
-  $subquery = db_select('field_revision_topic', 'frt');
-  $subquery->condition($node_condition)
-           ->fields('frt', array('entity_id'))
-           ->where("$nalias.nid = frt.entity_id");
-
-  $query->exists($subquery);
-}
-
-/**
- * Return the tid for the taxonomy term 'Team News'
- */
-function mini_voyage_outside_idea_tid() { // TODO: dump this in the container.
-  //Get vid of type Voyage.
-  $taxonomy = taxonomy_vocabulary_get_names();
-  $Voyage_vid = $taxonomy['Voyage']->vid;
-
-  // Configure the query
-  $query = new EntityFieldQuery();
-  $query->entityCondition('entity_type', 'taxonomy_term')
-        ->propertyCondition('vid', $Voyage_vid)
-        ->propertyCondition('name', 'Outside ideas');
-  $entities_taxonomy = $query->execute();
-
-  // Get only keys from $entities; which correspond to 'tid' terms.
-  $keys = array_keys($entities_taxonomy['taxonomy_term']);
-
-  // Get the first key which is the 'Team News' tid.
-  $tid = array_shift($keys);
-
-  return $tid;
-}
-
-/**
  * Implements hook_node_view().
  *
  * Adds meta-data pseudo fields to the node type advertisement to ease the use
  * in templates files.
  */
 function mini_voyage_node_view($node, $view_mode, $langcode) {
+
   if ($node->type == 'voyage') {
     // Adds the 'created' property as date field for templates processing.
     $node->content['metadata'] = array(
@@ -354,16 +309,17 @@ function mini_voyage_node_view($node, $view_mode, $langcode) {
         'datetime' => format_date($node->created, 'custom', 'Y-m-d'),
       ),
     );
-
+    $node->content['field_voyage_tags']['#attributes']['class'] = array('metadata-list-wrapper');
+    foreach (element_children($node->content['field_voyage_tags']) as $delta) {
+      if ($delta >= 0) {        // Adds a prepending whitespace character to respect the HTML.
+        $node->content['field_voyage_tags'][$delta]['#prefix'] = ' ';
+        $node->content['field_voyage_tags'][$delta]['#href'] = $node->type .'/'. $node->content['field_voyage_tags'][$delta]['#title'];
+        $node->content['field_voyage_tags'][$delta]['#options']['attributes']['class'] = array('metadata-topic');
+        $node->content['metadata'][$delta] = $node->content['field_voyage_tags'][$delta];
+      }
+    }
     switch ($view_mode) {
       case 'full':
-        $node->content['field_voyage_tags']['#attributes']['class'] = array('metadata-list-wrapper');
-        foreach (element_children($node->content['field_voyage_tags']) as $delta) {
-          if ($delta > 0) {
-            // Adds a prepending whitespace character to respect the HTML.
-            $node->content['field_voyage_tags'][$delta]['#prefix'] = ' ';
-          }
-        }
         // Continue the switch to add date metadata.
       case 'menu':
       case 'team':

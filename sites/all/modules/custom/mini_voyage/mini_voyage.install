@@ -74,7 +74,7 @@ function mini_voyage_update_7000() {
  * Re-set 'voyage' taxonomy.
  */
 function mini_voyage_update_7001() {
-  $query = new EntityFieldQuery();
+  /*$query = new EntityFieldQuery();
   $query->entityCondition('entity_type', 'taxonomy_term')
         ->entityCondition('bundle', 'voyage');
 
@@ -93,5 +93,5 @@ function mini_voyage_update_7001() {
     $term->vid = $vocabulary->vid;
     $term->vocabulary_machine_name = $vocabulary->name;
     taxonomy_term_save($term);
-  }
+  }*/
 }
