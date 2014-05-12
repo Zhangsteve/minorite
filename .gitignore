@@ -3,7 +3,7 @@
 sites/*/settings*.php
 
 # Ignore paths that contain user-generated content.
-sites/*/files
+#sites/*/files
 sites/*/private
 =======
 sites/*/*settings*.php
@@ -11,7 +11,7 @@ sites/*/*settings*.php
 # Ignore paths that contain generated content.
 cache/
 files/
-sites/*/files
+#sites/*/files
 sites/*/private
 
 # Ignore default text files
