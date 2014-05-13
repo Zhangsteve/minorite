@@ -24,28 +24,22 @@
  * @ingroup views_templates
  */
 $categ = array();
-if (isset($fields['category']->content)) {
-  $categ[] = $fields['category']->content;
+if (isset($fields['field_tags']->content)) {
+  $categ[] = $fields['field_tags']->content;
 }
-if (isset($fields['classification']->content)) {
-  $categ[] = $fields['classification']->content;
-}
-if (isset($fields['theme']->content)) {
-  $categ[] = $fields['theme']->content;
-}
-if (isset($fields['topic']->content)) {
-  $categ[] = $fields['topic']->content;
+if (isset($fields['field_voyage_tags']->content)) {
+  $categ[] = $fields['field_voyage_tags']->content;
 }
 ?>
+<?php //var_dump($fields);die();?>
 <li>
-  <article class="article-wrapper">
+  <article class="article-wrapper view-field">
     <!-- Article -->
-    <?php echo (isset($fields['title_field']->content) ? $fields['title_field']->content : ''); ?>
+    <h1><?php echo (isset($fields['title']->content) ? $fields['title']->content : ''); ?></h1>
     <p class="metadata-wrapper"><b class="metadata-publication-date"><?php echo $fields['created']->content; ?></b>
     <?php if (count($categ) > 0): ?><b class="metadata-topic"><?php echo implode(' - ', $categ); ?></b><?php endif; ?>
-    <?php if (isset($fields['files']->content)): ?><b class="metadata-filetype ico-ppt" title="Fichier"><?php echo $fields['files']->content; ?></b><?php endif; ?>
     </p>
-    <p><?php echo (isset($fields['search_api_excerpt']->content) ? $fields['search_api_excerpt']->content : ''); ?></p>
+    <p><?php echo (isset($fields['body_summary']->content) ? $fields['body_summary']->content : ''); ?></p>
     <!-- END Article -->
   </article>
 </li>
