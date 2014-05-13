@@ -78,6 +78,7 @@
  * @see template_process()
  */
 ?>
+
 <article class="article-wrapper">
   <?php print render($content['metadata']); ?>
 
@@ -93,11 +94,46 @@
   </p>
 
   <h1><?php print $title; ?></h1>
+ <?php //var_dump($content['field_voyage_image']);die();?>
+ <div class="rw album-dataitem-desc-wrapper">
+   <div class="w-1">
+      <ul class="album-datalist">
+        <li class="album-has-children">
+          <?php print  render($content['field_vignette']);?>
+        </li>
+      </ul>
+    </div>
+    <div class="w-2">
+     <?php if (count($content['field_voyage_image']) > 1):?>
+      <p class="form-button-rw form-actions">
+        <a href="#" onclick="javascript:media_slideshow();" class="button-like button-ico-slider"><i></i><?php print t('Launch the slideshow'); ?></a>
+      </p>
+     <?php endif;?>
+     <div class ="album-dataitem-hidden">
+       <ul class="album-datalist album-dataitem">
+        <?php
+          // Asset is an Image
+          //var_dump($content['field_voyage_image']);die();
+          if (!empty($content['field_voyage_image']['#items'])) {
+            foreach ($content['field_voyage_image']['#items'] as $key => $image) {
+              $output_image = render($content['field_voyage_image'][$key]);
+              $output = '<li style="display:none;">';
+              // Title of the asset
+              $title = truncate_utf8($image['title'], 60, FALSE, TRUE);
+              $path = file_create_url($image['uri']);
+              // Make link
+              $output .= l($output_image, $path, array('html' => TRUE, 'attributes' => array('alt' => $title, 'title' => $title, 'rel' => 'album01')));
+              $output .= '</li>';
+              echo $output;
+            }
+          }
+        ?>
+       </ul>
+     </div>
+    </div>
+ </div>
 
   <div class="article-body">
     <?php print render($content['body']); ?>
   </div> <!-- ./article-body -->
-
-
-  <?php print render($content['field_voyage_tags']); ?>
 </article>

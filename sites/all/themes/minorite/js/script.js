@@ -297,9 +297,9 @@ $('.ui-tabs-wrapper>ul.ui-tabs-nav').each(function(){
 
 
 //ALBUM
-$(".album-dataitem .views-field-field-asset-image .asset-type-image a").fancybox({
-  custom_counterText: '{#index#}/{#count#}',
-  titleFormat: fancyTitle,
+$(".album-dataitem-hidden ul li a").fancybox({
+  //custom_counterText: '{#index#}/{#count#}',
+  //titleFormat: fancyTitle,
   'titlePosition' 	: 'inside',
   'overlayOpacity'	: '0.75',
   'overlayColor'	: '#000',
@@ -311,18 +311,7 @@ $(".album-dataitem .views-field-field-asset-image .asset-type-image a").fancybox
   'onComplete'		:	function() {popinIsOpen(this);},
   'onClosed'		:	function() {popinIsClose(this);}
 });
-//VIDEO ALBUM
-$(".album-dataitem .views-field-field-asset-video-file a").fancybox({
-  custom_counterText: '{#index#}/{#count#}',
-  'titlePosition' 	: 'inside',
-  'overlayOpacity'	: '0.75',
-  'overlayColor'	: '#000',
-  //'autoScale'		: true,
-  'padding'			:	21,
-  'margin'			:	21,
-  'onComplete'		:	function() {popinIsOpen(this);},
-  'onClosed'		:	function() {popinIsClose(this);}
-});
+
 //PopinIsOpen
 function popinIsOpen(a) {
 	//
@@ -700,7 +689,7 @@ function replaceQueryString(url,param,value) {
 }
 // Media: Launch Slideshow
 function media_slideshow() {
-  $(".album-dataitem .views-field-field-asset-image").first().find('.asset-type-image a').click();
+  $(".album-dataitem-hidden .album-dataitem").first().find('li a').click();
   return false;
 }
 

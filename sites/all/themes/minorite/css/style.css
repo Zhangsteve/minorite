@@ -2289,3 +2289,6 @@ width: 16px;
 height: 16px;
 background-position: 0 -332px;
 }
+.album-datalist li:before {
+content: none !important;
+}
